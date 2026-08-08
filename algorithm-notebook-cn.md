@@ -22,55 +22,55 @@
 
 ### 复杂度速查表 (Complexity Cheat Sheet)
 
-| 算法 | 时间 | 空间 | 适用场景 |
-|------|------|------|----------|
-| **排序** | | | |
-| `std::sort` | O(N log N) | O(log N) | 通用排序 |
-| 计数排序 | O(N + K) | O(K) | 小范围整数 |
-| 基数排序 | O(N * W) | O(N + K) | 定长键值 |
-| **查找** | | | |
-| 二分查找 | O(log N) | O(1) | 有序数组 |
-| 三分查找 | O(log N) | O(1) | 单峰函数 |
-| 双指针 | O(N) | O(1) | 有序数组、滑动窗口 |
-| **图论（N 个点，M 条边）** | | | |
-| BFS / DFS | O(N + M) | O(N) | 无权图遍历 |
-| Dijkstra（二叉堆） | O(M log N) | O(N) | 非负边权 |
-| Bellman-Ford | O(N * M) | O(N) | 允许负边权 |
-| Floyd-Warshall | O(N^3) | O(N^2) | 全源最短路，N 较小 |
-| Kruskal 最小生成树 | O(M log M) | O(N) | 稀疏图 |
-| Prim 最小生成树 | O(M log N) | O(N) | 稠密图 |
-| 拓扑排序 | O(N + M) | O(N) | DAG |
-| SCC（Tarjan / Kosaraju） | O(N + M) | O(N) | 有向图 |
-| LCA（倍增法） | O(N log N) 预处理 / O(log N) 查询 | O(N log N) | 树上查询 |
-| **字符串（N 个字符）** | | | |
-| KMP | O(N) | O(N) | 单模式匹配 |
-| Z 算法 | O(N) | O(N) | 前缀匹配 |
-| Manacher | O(N) | O(N) | 最长回文子串 |
-| 后缀数组 | O(N log N) | O(N) | 子串查询 |
-| Aho-Corasick | O(N + M + Z) | O(N * |Σ|) | 多模式匹配 |
-| **数学** | | | |
-| 埃氏筛 | O(N log log N) | O(N) | 筛出 N 以内的素数 |
-| Miller-Rabin | O(K log^3 N) | O(1) | 素性检测（K 轮） |
-| GCD（欧几里得算法） | O(log min(a,b)) | O(1) | 整除/约分 |
-| 快速幂取模 | O(log E) | O(1) | a^b mod m |
-| **数据结构** | | | |
-| 树状数组（BIT/Fenwick） | O(log N) | O(N) | 前缀和、单点更新 |
-| 线段树 | O(log N) | O(4N) 或 O(2N) | 区间查询、区间更新 |
-| ST 表（Sparse Table） | O(N log N) 预处理 / O(1) 查询 | O(N log N) | 静态 RMQ |
-| DSU（并查集） | O(α(N)) 均摊 | O(N) | 连通分量 |
-| Treap / Splay | O(log N) 均摊 | O(N) | 有序集合、分裂合并 |
-| **网络流** | | | |
-| Dinic | O(V^2 * E) 一般图，O(E√V) 二分图 | O(E + V) | 最大流 |
-| MCMF（SPFA） | O(F * V * E) 最坏情况 | O(V + E) | 最小费用最大流 |
-| 匈牙利算法 | O(V^3) | O(V^2) | 分配/指派问题 |
-| **计算几何** | | | |
-| 凸包（Graham Scan） | O(N log N) | O(N) | 最小凸多边形 |
-| 最近点对 | O(N log N) | O(N) | 平面最近两点 |
-| 点在多边形内 | O(N) | O(1) | 射线法 |
+| 算法                       | 时间                              | 空间           | 适用场景           |
+| -------------------------- | --------------------------------- | -------------- | ------------------ | --- | ---------- |
+| **排序**                   |                                   |                |                    |
+| `std::sort`                | O(N log N)                        | O(log N)       | 通用排序           |
+| 计数排序                   | O(N + K)                          | O(K)           | 小范围整数         |
+| 基数排序                   | O(N \* W)                         | O(N + K)       | 定长键值           |
+| **查找**                   |                                   |                |                    |
+| 二分查找                   | O(log N)                          | O(1)           | 有序数组           |
+| 三分查找                   | O(log N)                          | O(1)           | 单峰函数           |
+| 双指针                     | O(N)                              | O(1)           | 有序数组、滑动窗口 |
+| **图论（N 个点，M 条边）** |                                   |                |                    |
+| BFS / DFS                  | O(N + M)                          | O(N)           | 无权图遍历         |
+| Dijkstra（二叉堆）         | O(M log N)                        | O(N)           | 非负边权           |
+| Bellman-Ford               | O(N \* M)                         | O(N)           | 允许负边权         |
+| Floyd-Warshall             | O(N^3)                            | O(N^2)         | 全源最短路，N 较小 |
+| Kruskal 最小生成树         | O(M log M)                        | O(N)           | 稀疏图             |
+| Prim 最小生成树            | O(M log N)                        | O(N)           | 稠密图             |
+| 拓扑排序                   | O(N + M)                          | O(N)           | DAG                |
+| SCC（Tarjan / Kosaraju）   | O(N + M)                          | O(N)           | 有向图             |
+| LCA（倍增法）              | O(N log N) 预处理 / O(log N) 查询 | O(N log N)     | 树上查询           |
+| **字符串（N 个字符）**     |                                   |                |                    |
+| KMP                        | O(N)                              | O(N)           | 单模式匹配         |
+| Z 算法                     | O(N)                              | O(N)           | 前缀匹配           |
+| Manacher                   | O(N)                              | O(N)           | 最长回文子串       |
+| 后缀数组                   | O(N log N)                        | O(N)           | 子串查询           |
+| Aho-Corasick               | O(N + M + Z)                      | O(N \*         | Σ                  | )   | 多模式匹配 |
+| **数学**                   |                                   |                |                    |
+| 埃氏筛                     | O(N log log N)                    | O(N)           | 筛出 N 以内的素数  |
+| Miller-Rabin               | O(K log^3 N)                      | O(1)           | 素性检测（K 轮）   |
+| GCD（欧几里得算法）        | O(log min(a,b))                   | O(1)           | 整除/约分          |
+| 快速幂取模                 | O(log E)                          | O(1)           | a^b mod m          |
+| **数据结构**               |                                   |                |                    |
+| 树状数组（BIT/Fenwick）    | O(log N)                          | O(N)           | 前缀和、单点更新   |
+| 线段树                     | O(log N)                          | O(4N) 或 O(2N) | 区间查询、区间更新 |
+| ST 表（Sparse Table）      | O(N log N) 预处理 / O(1) 查询     | O(N log N)     | 静态 RMQ           |
+| DSU（并查集）              | O(α(N)) 均摊                      | O(N)           | 连通分量           |
+| Treap / Splay              | O(log N) 均摊                     | O(N)           | 有序集合、分裂合并 |
+| **网络流**                 |                                   |                |                    |
+| Dinic                      | O(V^2 \* E) 一般图，O(E√V) 二分图 | O(E + V)       | 最大流             |
+| MCMF（SPFA）               | O(F _ V _ E) 最坏情况             | O(V + E)       | 最小费用最大流     |
+| 匈牙利算法                 | O(V^3)                            | O(V^2)         | 分配/指派问题      |
+| **计算几何**               |                                   |                |                    |
+| 凸包（Graham Scan）        | O(N log N)                        | O(N)           | 最小凸多边形       |
+| 最近点对                   | O(N log N)                        | O(N)           | 平面最近两点       |
+| 点在多边形内               | O(N)                              | O(1)           | 射线法             |
 
 ### 常用类型定义与工具 (Common Typedefs and Utilities)
 
-```cpp
+````cpp
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -91,19 +91,12 @@ using vvll = vector<vll>;
 #define per(i, a, b) for (int i = (b) - 1; i >= (a); --i)
 #define eb emplace_back
 #define pb push_back
+#define fast ios::sync_with_stdio(false);cin.tie(nullptr);
 
 // ---- 常量 ----
 const int INF = 1e9;        // 用于非加权/小权图（如 BFS 距离）
 const ll LINF = 1e18;       // 用于加权图最短路（Dijkstra 等），确保 > 最大可能路径和
 const int MOD = 1e9 + 7;    // 常用质数模数，也可用 998244353（NTT 友好）
-
-// ---- 快速 I/O —— 在 main() 开头调用 ----
-void fast_io() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-    // 注意：不要同时绑定 cin 和 cout 后再用 printf/scanf，会导致输出乱序
-}
-```
 
 ### 精选核心模板（Verified from KACTL / jiangly）
 
@@ -130,7 +123,7 @@ struct UF {
         return true;
     }
 };
-```
+````
 
 #### 并查集 DSU —— jiangly 风格（显式 siz 数组）
 
@@ -2231,6 +2224,7 @@ struct HLD_Comprehensive {
 ```
 
 **HLD 使用说明**：
+
 - 版本 A 适合大多数路径查询/更新问题，直接配合线段树使用
 - 版本 B 额外支持 jump、isAncestor、换根等高级操作
 - 配合 `SegTreeIter`（迭代线段树）可获得更快常数
@@ -2489,21 +2483,22 @@ struct TwoSAT {
 
 ### 常见易错点总结
 
-| 问题 | 易错点 | 正确做法 |
-|------|--------|----------|
-| **INF 取值** | 用 1e9 可能小于路径权重累加和 | 用 `const ll LINF = 1e18;` |
-| **Floyd 循环顺序** | k 不在最外层 | **k 必须最外层**（k→i→j），否则错误 |
-| **SCC 回边更新** | 用 `low[v]` 更新 `low[u]` | **必须用 `dfn[v]`**，否则跨 SCC 合并错误 |
-| **Dijkstra 稠密图** | 盲目用堆优化版 | E ~ V^2 时用 O(V^2) 朴素版更快 |
-| **SPFA 负环检测** | 只用 `inq` 数组 | **还要用 `cnt[v]` 记录入队次数**，>= N 则有负环 |
-| **桥的判定** | 用 `low[v] >= dfn[u]` | 桥的条件是 **`low[v] > dfn[u]`**（严格大于） |
-| **割点-根节点** | 忘记特殊处理根节点 | 根节点需 **children > 1** 才是割点 |
-| **Kruskal 边排序** | 忘记排序 | 必须按边权升序排序，否则不保证最小生成树 |
-| **Prim 的 set** | 用 priority_queue 代替 set | PQ 不支持 decrease-key，改用 set 或在 push 时忽略旧值 |
+| 问题                | 易错点                        | 正确做法                                              |
+| ------------------- | ----------------------------- | ----------------------------------------------------- |
+| **INF 取值**        | 用 1e9 可能小于路径权重累加和 | 用 `const ll LINF = 1e18;`                            |
+| **Floyd 循环顺序**  | k 不在最外层                  | **k 必须最外层**（k→i→j），否则错误                   |
+| **SCC 回边更新**    | 用 `low[v]` 更新 `low[u]`     | **必须用 `dfn[v]`**，否则跨 SCC 合并错误              |
+| **Dijkstra 稠密图** | 盲目用堆优化版                | E ~ V^2 时用 O(V^2) 朴素版更快                        |
+| **SPFA 负环检测**   | 只用 `inq` 数组               | **还要用 `cnt[v]` 记录入队次数**，>= N 则有负环       |
+| **桥的判定**        | 用 `low[v] >= dfn[u]`         | 桥的条件是 **`low[v] > dfn[u]`**（严格大于）          |
+| **割点-根节点**     | 忘记特殊处理根节点            | 根节点需 **children > 1** 才是割点                    |
+| **Kruskal 边排序**  | 忘记排序                      | 必须按边权升序排序，否则不保证最小生成树              |
+| **Prim 的 set**     | 用 priority_queue 代替 set    | PQ 不支持 decrease-key，改用 set 或在 push 时忽略旧值 |
 
 ---
 
 **说明**：
+
 - 所有代码注释已翻译为中文，变量名保持英文（OI/ACM 国际惯例）
 - 新增迭代线段树 (`SegTreeIter`)，配合 HLD 使用比递归版更快
 - 新增 KACTL 紧凑版并查集 (`UF`) 和 jiangly 风格迭代 DSU
@@ -2512,6 +2507,7 @@ struct TwoSAT {
 - Dijkstra 使用 `LINF = 1e18`，避免大权图溢出
 - Floyd 已确认 k 循环在最外层（三重循环 k→i→j）
 - SCC 回边更新已确认使用 `dfn[y]`（非 `low[y]`），两版代码均正确
+
 ## 4. 数学与数论
 
 ### 4.1 模运算
@@ -3543,6 +3539,7 @@ for (int k = 0; k < n; k++)          // 最外层 k
 ```
 
 原因：k 在最外层保证"使用前 k 个顶点的最短路径"这一阶段定义成立。将 k 放在内层会丢失部分中间顶点的路径更新。
+
 # 5. 字符串算法 (String Algorithms)
 
 ---
@@ -4510,15 +4507,16 @@ vector<string> dedupCyclic(const vector<string> &words) {
 
 ## 5.8 字符串算法复杂度总结
 
-| 算法 | 预处理 | 查询/匹配 | 空间 | 用途 |
-|------|--------|-----------|------|------|
-| KMP | $O(m)$ | $O(n)$ | $O(m)$ | 单模式匹配 |
-| Z-Algorithm | $O(n)$ | $O(n)$ | $O(n)$ | 前缀与后缀 LCP |
-| Manacher | $O(n)$ | $O(1)$ | $O(n)$ | 最长回文子串 |
-| AC 自动机 | $O(L \cdot \vert\Sigma\vert)$ | $O(n + matches)$ | $O(L \cdot \vert\Sigma\vert)$ | 多模式匹配 |
-| 后缀数组 | $O(n \log n)$ | $O(\log n)$ | $O(n)$ | 子串查询、LCP |
-| 字符串哈希 | $O(n)$ | $O(1)$ / 子串 | $O(n)$ | 子串判等、二分 LCP |
-| 最小表示法 | $O(n)$ | -- | $O(1)$ | 循环同构判等 |
+| 算法        | 预处理                        | 查询/匹配        | 空间                          | 用途               |
+| ----------- | ----------------------------- | ---------------- | ----------------------------- | ------------------ |
+| KMP         | $O(m)$                        | $O(n)$           | $O(m)$                        | 单模式匹配         |
+| Z-Algorithm | $O(n)$                        | $O(n)$           | $O(n)$                        | 前缀与后缀 LCP     |
+| Manacher    | $O(n)$                        | $O(1)$           | $O(n)$                        | 最长回文子串       |
+| AC 自动机   | $O(L \cdot \vert\Sigma\vert)$ | $O(n + matches)$ | $O(L \cdot \vert\Sigma\vert)$ | 多模式匹配         |
+| 后缀数组    | $O(n \log n)$                 | $O(\log n)$      | $O(n)$                        | 子串查询、LCP      |
+| 字符串哈希  | $O(n)$                        | $O(1)$ / 子串    | $O(n)$                        | 子串判等、二分 LCP |
+| 最小表示法  | $O(n)$                        | --               | $O(1)$                        | 循环同构判等       |
+
 # 6. 动态规划 (Dynamic Programming)
 
 ## 6.1 背包问题 (Knapsack Problems)
@@ -4620,9 +4618,9 @@ int unbounded_min_items(const vector<int>& w, int C) {
 
 **对比记忆**：
 
-| 背包类型 | 内层循环方向 | 原因 |
-|----------|-------------|------|
-| 01 背包 | `j` 从大到小 | 每个物品只用一次，`dp[j-w[i]]` 不能包含当前物品 |
+| 背包类型 | 内层循环方向 | 原因                                            |
+| -------- | ------------ | ----------------------------------------------- |
+| 01 背包  | `j` 从大到小 | 每个物品只用一次，`dp[j-w[i]]` 不能包含当前物品 |
 | 完全背包 | `j` 从小到大 | 每个物品可用多次，`dp[j-w[i]]` 可以包含当前物品 |
 
 ---
@@ -4839,7 +4837,7 @@ int max_envelopes(vector<pair<int,int>>& e) {
 
 ## 6.5 最长公共子序列 (LCS)
 
-### 6.5.1 标准 O(N*M) DP
+### 6.5.1 标准 O(N\*M) DP
 
 ```cpp
 // 时间 O(N*M)，空间 O(N*M)
@@ -5743,7 +5741,7 @@ bool is_bad(const Line& l1, const Line& l2, const Line& l3) {
 
 **问题形式**：`dp[i][j] = min_{k<j} { dp[i-1][k-1] + cost(k, j) }`，其中 `cost` 满足四边形不等式。
 
-**优化**：当 `opt[i][j-1] <= opt[i][j] <= opt[i+1][j]` 时，内层枚举 `k` 的范围被限定，总复杂度从 O(K * N^2) 降到 O(K * N)。
+**优化**：当 `opt[i][j-1] <= opt[i][j] <= opt[i+1][j]` 时，内层枚举 `k` 的范围被限定，总复杂度从 O(K _ N^2) 降到 O(K _ N)。
 
 ### 6.13.1 分治优化 (Divide and Conquer DP)
 
@@ -5925,27 +5923,27 @@ vector<bool> game_dp(int N, const vector<int>& moves) {
 
 ### 6.16.1 状态设计常见思路
 
-| 模式 | 示例问题 | 状态定义 |
-|------|---------|---------|
-| 线性 DP | LIS, 最大子段和 | `dp[i]` 以 i 结尾 |
-| 前缀 DP | 背包, 划分数 | `dp[j]` 前 i 个容量为 j |
-| 区间 DP | 石子合并, 回文 | `dp[l][r]` 区间 |
-| 树形 DP | 最大独立集, 直径 | `dp[u][0/1]` 以 u 为根 |
-| 状压 DP | TSP, 匹配 | `dp[mask]` 或 `dp[mask][i]` |
-| 数位 DP | 范围内计数 | `dp(pos, tight, ...)` |
-| 期望 DP | 随机过程 | `dp[i]` 从 i 到终点的期望 |
+| 模式    | 示例问题         | 状态定义                    |
+| ------- | ---------------- | --------------------------- |
+| 线性 DP | LIS, 最大子段和  | `dp[i]` 以 i 结尾           |
+| 前缀 DP | 背包, 划分数     | `dp[j]` 前 i 个容量为 j     |
+| 区间 DP | 石子合并, 回文   | `dp[l][r]` 区间             |
+| 树形 DP | 最大独立集, 直径 | `dp[u][0/1]` 以 u 为根      |
+| 状压 DP | TSP, 匹配        | `dp[mask]` 或 `dp[mask][i]` |
+| 数位 DP | 范围内计数       | `dp(pos, tight, ...)`       |
+| 期望 DP | 随机过程         | `dp[i]` 从 i 到终点的期望   |
 
 ### 6.16.2 优化对照表
 
-| 优化方法 | 适用 DP 形式 | 复杂度降低 |
-|----------|-------------|-----------|
-| 滚动数组 | 只依赖上一行/列 | O(N^2) 空间 → O(N) |
-| 单调队列 | `dp[i] = min/max {dp[k] + f(i,k)}` 窗口约束 | O(N^2) → O(N) |
-| 斜率优化 (CHT) | `dp[i] = min {m_j * x_i + c_j}` | O(N^2) → O(N) |
-| 分治优化 | `dp[layer][j] = min {dp[layer-1][k] + cost(k,j)}` | O(KN^2) → O(KN log N) |
-| Knuth 优化 | 区间 DP 满足四边形不等式 | O(N^3) → O(N^2) |
-| SOS DP | 子集求和 | O(3^N) → O(N*2^N) |
-| 二进制拆分 | 多重背包 | O(C*Σcnt) → O(C*Σlog cnt) |
+| 优化方法       | 适用 DP 形式                                      | 复杂度降低                |
+| -------------- | ------------------------------------------------- | ------------------------- |
+| 滚动数组       | 只依赖上一行/列                                   | O(N^2) 空间 → O(N)        |
+| 单调队列       | `dp[i] = min/max {dp[k] + f(i,k)}` 窗口约束       | O(N^2) → O(N)             |
+| 斜率优化 (CHT) | `dp[i] = min {m_j * x_i + c_j}`                   | O(N^2) → O(N)             |
+| 分治优化       | `dp[layer][j] = min {dp[layer-1][k] + cost(k,j)}` | O(KN^2) → O(KN log N)     |
+| Knuth 优化     | 区间 DP 满足四边形不等式                          | O(N^3) → O(N^2)           |
+| SOS DP         | 子集求和                                          | O(3^N) → O(N\*2^N)        |
+| 二进制拆分     | 多重背包                                          | O(C*Σcnt) → O(C*Σlog cnt) |
 
 ### 6.16.3 常见调试错误
 
@@ -6028,6 +6026,7 @@ vector<int> merge_items(const vector<int>& a, const vector<int>& b, int C) {
 7. **数位 DP**：memo key `(pos, tight, leadzero, ...)`，每组测试需重置。
 8. **斜率优化**：交叉乘用 `__int128` 防溢出；斜率/查询不单调时用 Li Chao 树。
 9. **四边形不等式**：分治/二分栈适用于 1D/1D；Knuth 适用于区间 DP。
+
 ## 7. 计算几何 (Computational Geometry)
 
 ### 7.1 基础：点与向量 (Point and Vector Basics)
@@ -7239,6 +7238,7 @@ vector<Face> convexHull3D(vector<P3> pts) {
 - **旋转卡壳**：输入凸包必须是严格的 CCW 排列，不含共线边上的多余点。`cross >= 0` 的判断确保 j 单调前进不回溯。循环退出条件 `i < j` 而非 `i < n`，因为 j 永远大于等于 i。
 
 - **常用数学常数**：
+
   ```cpp
   const double PI = acos(-1.0);
   const double INF_D = 1e100;
@@ -7250,24 +7250,24 @@ vector<Face> convexHull3D(vector<P3> pts) {
 
 ### 模板速查表 (Template Quick Reference)
 
-| 算法 | 英文 | 复杂度 | 推荐实现 | 关键要点 |
-|------|------|--------|----------|----------|
-| 凸包 | Convex Hull | O(N log N) | Andrew 单调链 | `<= 0` 排除共线点；`< 0` 保留 |
-| 半平面交 | Half-plane Intersection | O(N log N) | S&I 双端队列 | 必须加包围盒，注意平行线处理 |
-| 旋转卡壳直径 | Rotating Calipers Diameter | O(N) | 对踵点扫描 | 输入必须是严格 CCW 凸包 |
-| 最小外接矩形 | Min Bounding Rectangle | O(N) | 三指针旋转卡壳 | 维护 j(高), l(左投影), r(右投影) |
-| 最近点对 | Closest Pair | O(N log N) | 扫面线 / 分治 | 扫面线版更简洁，带内候选 ≤ 6 个 |
-| 最小圆覆盖 | Min Enclosing Circle | O(N) 期望 | Welzl 随机增量 | 随机化是 O(N) 的保证 |
-| 点在多边形内 | Point in Polygon | O(N) | 射线法 | 半开区间处理避免顶点重数 |
-| 点在凸多边形内 | Point in Convex Polygon | O(log N) | 二分定位 | 先判最外扇形，再二分 |
-| 线段相交 | Segment Intersection | O(1) | 跨立实验 | 区分严格相交、端点接触、共线重叠 |
-| 多边形面积 | Polygon Area | O(N) | 鞋带公式 | 二倍有向面积避除法 |
-| 闵可夫斯基和 | Minkowski Sum | O(N+M) | 双指针归并 | 要求 CCW + 最低 leftmost 在 first |
-| 凸多边形距离 | Convex Polygon Distance | O(N+M) | Minkowski 差 | 求原点到差的最短距离 |
-| 多边形切割 | Polygon Cut | O(N) | 逐边处理 | 保留直线左侧部分 |
-| 圆与直线交点 | Circle-Line Intersection | O(1) | 判别式 | 相切/相交/相离三种情况 |
-| 两圆交面积 | Circle Intersection Area | O(1) | 扇形-三角形 | 内含/相切/相交三种情况 |
-| 三维凸包 | 3D Convex Hull | O(N^2) | 增量法 | 参考 KACTL Point3D.h |
+| 算法           | 英文                       | 复杂度     | 推荐实现       | 关键要点                          |
+| -------------- | -------------------------- | ---------- | -------------- | --------------------------------- |
+| 凸包           | Convex Hull                | O(N log N) | Andrew 单调链  | `<= 0` 排除共线点；`< 0` 保留     |
+| 半平面交       | Half-plane Intersection    | O(N log N) | S&I 双端队列   | 必须加包围盒，注意平行线处理      |
+| 旋转卡壳直径   | Rotating Calipers Diameter | O(N)       | 对踵点扫描     | 输入必须是严格 CCW 凸包           |
+| 最小外接矩形   | Min Bounding Rectangle     | O(N)       | 三指针旋转卡壳 | 维护 j(高), l(左投影), r(右投影)  |
+| 最近点对       | Closest Pair               | O(N log N) | 扫面线 / 分治  | 扫面线版更简洁，带内候选 ≤ 6 个   |
+| 最小圆覆盖     | Min Enclosing Circle       | O(N) 期望  | Welzl 随机增量 | 随机化是 O(N) 的保证              |
+| 点在多边形内   | Point in Polygon           | O(N)       | 射线法         | 半开区间处理避免顶点重数          |
+| 点在凸多边形内 | Point in Convex Polygon    | O(log N)   | 二分定位       | 先判最外扇形，再二分              |
+| 线段相交       | Segment Intersection       | O(1)       | 跨立实验       | 区分严格相交、端点接触、共线重叠  |
+| 多边形面积     | Polygon Area               | O(N)       | 鞋带公式       | 二倍有向面积避除法                |
+| 闵可夫斯基和   | Minkowski Sum              | O(N+M)     | 双指针归并     | 要求 CCW + 最低 leftmost 在 first |
+| 凸多边形距离   | Convex Polygon Distance    | O(N+M)     | Minkowski 差   | 求原点到差的最短距离              |
+| 多边形切割     | Polygon Cut                | O(N)       | 逐边处理       | 保留直线左侧部分                  |
+| 圆与直线交点   | Circle-Line Intersection   | O(1)       | 判别式         | 相切/相交/相离三种情况            |
+| 两圆交面积     | Circle Intersection Area   | O(1)       | 扇形-三角形    | 内含/相切/相交三种情况            |
+| 三维凸包       | 3D Convex Hull             | O(N^2)     | 增量法         | 参考 KACTL Point3D.h              |
 
 ---
 
@@ -7285,11 +7285,11 @@ Dinic 算法是竞赛中最常用的最大流算法，核心思想是 **分层�
 
 ### 关键优化
 
-| 优化 | 说明 |
-|------|------|
-| **当前弧优化** | `ptr[u]` 记录每个节点下一次该尝试的边，避免重复扫描已满流的边 |
-| **多路增广** | DFS 一次尽可能多地推送流量，而非每次只找一条增广路 |
-| **边对存储** | 正向边和反向边相邻存储（`rev` 字段或 `tot^1` 技巧），保证 $O(1)$ 取反向边 |
+| 优化             | 说明                                                                        |
+| ---------------- | --------------------------------------------------------------------------- |
+| **当前弧优化**   | `ptr[u]` 记录每个节点下一次该尝试的边，避免重复扫描已满流的边               |
+| **多路增广**     | DFS 一次尽可能多地推送流量，而非每次只找一条增广路                          |
+| **边对存储**     | 正向边和反向边相邻存储（`rev` 字段或 `tot^1` 技巧），保证 $O(1)$ 取反向边   |
 | **反边流量守恒** | 正向边 `flow += f`，反向边 `flow -= f`，始终满足 `fwd.flow + rev.flow == 0` |
 
 ### 8.1.1 标准 Dinic（BFS + DFS + 当前弧优化，`rev` 字段版本）
@@ -7480,6 +7480,7 @@ struct Dinic_TotTrick {
 KACTL 的 Dinic 额外引入 **容量缩放 (capacity scaling)**：从大到小枚举阈值 `lim`，每轮只考虑容量 $\ge$ `lim` 的边。这使得算法在遍历邻接表时可以提前跳过不够大的边，在大容量图上通常比标准 Dinic 更快。
 
 核心：
+
 - `lim` 从 `1 << 30`（或 $\ge$ 最大容量的最小 2 的幂）开始，每次右移一位
 - BFS 和 DFS 都增加 `lim` 参数，只处理 `cap >= lim` 的边
 - `>> (30 - L)` 的含义：如果要涵盖容量不超过 $2^L$ 的图，起始 `lim` 可设为 `1 << L`
@@ -7900,6 +7901,7 @@ Hopcroft-Karp (HK) 算法是 **无权二分图最大匹配**的最优选择，�
 ### 算法思想
 
 与 Dinic 类似，HK 也使用分层 + 阻塞匹配的思路：
+
 1. **BFS**：将左部未匹配点作为第 0 层，对未匹配的左部→右部边和已匹配的右部→左部边交替 BFS，构建分层图。当到达一个未匹配的右部点时停止。
 2. **DFS**：在分层图上对每个未匹配的左部点做增广。由于分层图保证了最短增广路长度单调递增，每轮 BFS 后增广路长度至少 +2，因此最多 $O(\sqrt{V})$ 轮。
 
@@ -8025,14 +8027,14 @@ struct HopcroftKarp {
 
 ### 二分图匹配方案速查
 
-| 问题 | 转化方式 |
-|------|----------|
-| 最大匹配 | HK 或 Dinic |
-| 最小点覆盖 | Konig 定理：最小点覆盖 = 最大匹配，方案由交替 BFS 构造 |
-| 最大独立集 | 总点数 - 最大匹配（= 总点数 - 最小点覆盖） |
-| 最小边覆盖 | 若无孤立点 = 总点数 - 最大匹配 |
-| DAG 最小路径覆盖 | 拆点二分图，顶点数 - 最大匹配 |
-| 带权匹配 | KM 算法 $O(V^3)$ 或 MCMF |
+| 问题             | 转化方式                                               |
+| ---------------- | ------------------------------------------------------ |
+| 最大匹配         | HK 或 Dinic                                            |
+| 最小点覆盖       | Konig 定理：最小点覆盖 = 最大匹配，方案由交替 BFS 构造 |
+| 最大独立集       | 总点数 - 最大匹配（= 总点数 - 最小点覆盖）             |
+| 最小边覆盖       | 若无孤立点 = 总点数 - 最大匹配                         |
+| DAG 最小路径覆盖 | 拆点二分图，顶点数 - 最大匹配                          |
+| 带权匹配         | KM 算法 $O(V^3)$ 或 MCMF                               |
 
 ---
 
@@ -8043,6 +8045,7 @@ struct HopcroftKarp {
 **问题**：给定有向图，每个点有权值 $w_i$（可正可负）。选出一个点集 $S$，满足闭合性（$\forall u \in S, (u \to v) \in E \implies v \in S$），且 $\sum_{i \in S} w_i$ 最大。
 
 **建模**：
+
 - 源点 $s$ 向所有 $w_i > 0$ 的点连边，容量 $= w_i$
 - 所有 $w_i < 0$ 的点向汇点 $t$ 连边，容量 $= |w_i|$
 - 原图有向边 $(u \to v)$ 保留，容量 $= +\infty$
@@ -8103,6 +8106,7 @@ struct MaxWeightClosure {
 **问题**：在 DAG 中，用最少的路径覆盖所有顶点，路径之间互不相交。
 
 **建模**：
+
 - 每个顶点 $i$ 拆为 $i_{out}$（左部）和 $i_{in}$（右部）
 - 原图每条边 $(u \to v)$ 变为 $u_{out} \to v_{in}$（容量 1）
 - 源点连所有 $i_{out}$（容量 1），所有 $i_{in}$ 连汇点（容量 1）
@@ -8213,6 +8217,7 @@ struct MinPathCoverIntersecting {
 ### 核心转化
 
 对于每条边 $(u, v, l, r)$（下界 $l$，上界 $r$）：
+
 1. 构造新边 $u \to v$，容量 $= r - l$
 2. 维护平衡数组：$\text{balance}[v] \mathrel{+}= l$（流入），$\text{balance}[u] \mathrel{-}= l$（流出）
 3. 新增超级源 $S'$ 和超级汇 $T'$
@@ -8222,12 +8227,12 @@ struct MinPathCoverIntersecting {
 
 ### 三类问题解法
 
-| 问题 | 步骤 |
-|------|------|
-| **无源汇可行流** | 跑 $S' \to T'$ 最大流，若满流则可行 |
-| **有源汇可行流** | 加 $t \to s$ (容量 $\infty$)，转为无源汇 |
+| 问题             | 步骤                                                                           |
+| ---------------- | ------------------------------------------------------------------------------ |
+| **无源汇可行流** | 跑 $S' \to T'$ 最大流，若满流则可行                                            |
+| **有源汇可行流** | 加 $t \to s$ (容量 $\infty$)，转为无源汇                                       |
 | **有源汇最大流** | 先求可行流，然后去掉 $t \to s$ 边及 $S',T'$，在原残量网络上跑 $s \to t$ 最大流 |
-| **有源汇最小流** | 先求可行流，然后去掉 $t \to s$ 边，跑 $t \to s$ 最大流（逆向），减去即可 |
+| **有源汇最小流** | 先求可行流，然后去掉 $t \to s$ 边，跑 $t \to s$ 最大流（逆向），减去即可       |
 
 ```cpp
 /**
@@ -8563,15 +8568,15 @@ struct BoundedFlowSimple {
 
 ## 8.7 复杂度速查
 
-| 算法 | 复杂度 | 适用规模 | 备注 |
-|------|--------|----------|------|
-| Dinic 标准 | $O(V^2E)$ | $V \le 10^3$，$E \le 10^4$ | 一般图最大流首选 |
-| Dinic 缩放 | $O(V^2E \log C)$ | 同标准 Dinic | 大容量图更快 |
-| Dinic 单位容量 | $O(E\sqrt{V})$ | $V \le 10^5$，$E \le 10^5$ | 二分图匹配 / 网络 |
-| MCMF | $O(FE\log V)$ | $F$（流量）$\le 10^4$ | Johnson 势能版 |
-| 匈牙利（指派） | $O(V^3)$ | $V \le 500$ | 稠密带权指派 |
-| Hopcroft-Karp | $O(E\sqrt{V})$ | $V \le 10^5$ | 无权二分图匹配 |
-| 上下界最大流 | $O(\text{Dinic})$ | 同 Dinic | 图规模加 2 个节点 |
+| 算法           | 复杂度            | 适用规模                   | 备注              |
+| -------------- | ----------------- | -------------------------- | ----------------- |
+| Dinic 标准     | $O(V^2E)$         | $V \le 10^3$，$E \le 10^4$ | 一般图最大流首选  |
+| Dinic 缩放     | $O(V^2E \log C)$  | 同标准 Dinic               | 大容量图更快      |
+| Dinic 单位容量 | $O(E\sqrt{V})$    | $V \le 10^5$，$E \le 10^5$ | 二分图匹配 / 网络 |
+| MCMF           | $O(FE\log V)$     | $F$（流量）$\le 10^4$      | Johnson 势能版    |
+| 匈牙利（指派） | $O(V^3)$          | $V \le 500$                | 稠密带权指派      |
+| Hopcroft-Karp  | $O(E\sqrt{V})$    | $V \le 10^5$               | 无权二分图匹配    |
+| 上下界最大流   | $O(\text{Dinic})$ | 同 Dinic                   | 图规模加 2 个节点 |
 
 ---
 
@@ -8580,6 +8585,7 @@ struct BoundedFlowSimple {
 ### 拆点 (Node Splitting)
 
 当需要限制**点的容量**时：
+
 - 将点 $i$ 拆为 $i_{in}$ 和 $i_{out}$
 - 连边 $i_{in} \to i_{out}$，容量 $=$ 点容量
 - 所有原入边连向 $i_{in}$，所有原出边从 $i_{out}$ 出发
@@ -8594,6 +8600,7 @@ struct BoundedFlowSimple {
 ### 棋盘染色
 
 $n \times m$ 网格图上求最大独立集 / 最小覆盖：
+
 - 按 $(i+j) \bmod 2$ 将格子分为黑部和白部
 - 冲突的格子之间连边
 - 转化最大匹配 / 最小割
@@ -8606,17 +8613,17 @@ $n \times m$ 网格图上求最大独立集 / 最小覆盖：
 
 ## 8.9 常见坑点
 
-| 坑点 | 说明 |
-|------|------|
-| **反向边容量** | 有向边：正向 `cap`，反向 `0`。无向边：正反向均为 `cap` |
-| **INF 取值** | 用 `LLONG_MAX / 4` 或 `1e18`，保证加法不溢出；`0x3f3f3f3f` 在 ll 图不够大 |
-| **当前弧重置** | 每次 BFS 后必须重置 `ptr`，否则当前弧优化失效或 WA |
-| **边数奇数偶数** | `tot^1` 技巧要求边从 0 开始编号且成对添加 |
-| **流量对称性** | 任意时刻 `fwd.cap + rev.cap = 初始 cap` 必须成立，可断言验证 |
-| **SPFA 被卡** | 费用流优先用 Dijkstra + 势能；势能初始化只在有负权边时跑 SPFA |
-| **重边合并** | 多边直接累加容量，避免建重边降低效率 |
-| **DFS 爆栈** | 递归 DFS 增广在 $V$ 较大时可能栈溢出，改用迭代版 |
-| **下界流流量获取** | 实际流量 $=$ 下界 $+$ Dinic 残量网络对应边流量 |
+| 坑点               | 说明                                                                      |
+| ------------------ | ------------------------------------------------------------------------- |
+| **反向边容量**     | 有向边：正向 `cap`，反向 `0`。无向边：正反向均为 `cap`                    |
+| **INF 取值**       | 用 `LLONG_MAX / 4` 或 `1e18`，保证加法不溢出；`0x3f3f3f3f` 在 ll 图不够大 |
+| **当前弧重置**     | 每次 BFS 后必须重置 `ptr`，否则当前弧优化失效或 WA                        |
+| **边数奇数偶数**   | `tot^1` 技巧要求边从 0 开始编号且成对添加                                 |
+| **流量对称性**     | 任意时刻 `fwd.cap + rev.cap = 初始 cap` 必须成立，可断言验证              |
+| **SPFA 被卡**      | 费用流优先用 Dijkstra + 势能；势能初始化只在有负权边时跑 SPFA             |
+| **重边合并**       | 多边直接累加容量，避免建重边降低效率                                      |
+| **DFS 爆栈**       | 递归 DFS 增广在 $V$ 较大时可能栈溢出，改用迭代版                          |
+| **下界流流量获取** | 实际流量 $=$ 下界 $+$ Dinic 残量网络对应边流量                            |
 
 ---
 
@@ -8633,6 +8640,7 @@ $n \times m$ 网格图上求最大独立集 / 最小覆盖：
 ---
 
 > **参考文献**：KACTL (github.com/kth-competitive-programming/kactl)、OI-wiki (oi-wiki.org)、cp-algorithms (cp-algorithms.com)、AtCoder Library (ACL)
+
 # 9. 高级技巧 (Advanced Techniques)
 
 ---
@@ -8787,12 +8795,12 @@ long long hilbertOrder(int x, int y, int N) {
 
 ### 9.1.6 复杂度与适用场景
 
-| 变种 | 复杂度 | 适用 |
-|------|--------|------|
-| 普通莫队 | $O((n+q)\sqrt{n})$ | 无修改区间查询 |
-| 带修改莫队 | $O(n^{5/3})$ | 带单点修改 |
-| 树上莫队 | $O(n\sqrt{n})$ | 树上路径/子树询问 |
-| 回滚莫队 | $O(n\sqrt{n})$ | 不支持删除操作（如最大值） |
+| 变种       | 复杂度             | 适用                       |
+| ---------- | ------------------ | -------------------------- |
+| 普通莫队   | $O((n+q)\sqrt{n})$ | 无修改区间查询             |
+| 带修改莫队 | $O(n^{5/3})$       | 带单点修改                 |
+| 树上莫队   | $O(n\sqrt{n})$     | 树上路径/子树询问          |
+| 回滚莫队   | $O(n\sqrt{n})$     | 不支持删除操作（如最大值） |
 
 ---
 
@@ -8807,6 +8815,7 @@ long long hilbertOrder(int x, int y, int N) {
 ### 9.2.2 核心思想
 
 将操作序列按时间（下标）分治：
+
 1. 递归处理左半部分（所有左半边的修改）
 2. 合并：统计左半边对右半边查询的贡献
 3. 递归处理右半部分
@@ -9052,12 +9061,12 @@ int query(int l, int r, int k) {
 
 ### 9.4.5 变种
 
-| 问题 | 做法 |
-|------|------|
-| 区间不同数的个数 | 对每个位置维护其上一次出现位置，主席树 $O(n\log n)$ |
-| 区间 Mex | 主席树维护每个值最后出现位置 $\ge l$ 的最小值 |
-| 区间众数 | 主席树 + 分块（在线 $O(\sqrt{n})$）或离线莫队 |
-| 区间大于 $x$ 的个数 | 主席树查询即可 |
+| 问题                | 做法                                                |
+| ------------------- | --------------------------------------------------- |
+| 区间不同数的个数    | 对每个位置维护其上一次出现位置，主席树 $O(n\log n)$ |
+| 区间 Mex            | 主席树维护每个值最后出现位置 $\ge l$ 的最小值       |
+| 区间众数            | 主席树 + 分块（在线 $O(\sqrt{n})$）或离线莫队       |
+| 区间大于 $x$ 的个数 | 主席树查询即可                                      |
 
 ---
 
@@ -9066,6 +9075,7 @@ int query(int l, int r, int k) {
 ### 9.5.1 问题引入
 
 维护一个森林，支持：
+
 1. 加边/删边：在 $u,v$ 间连边或断边
 2. 路径查询/修改：路径上和、最大值
 3. 查询连通性
@@ -9079,6 +9089,7 @@ LCT 用 Splay 实现每个 Preferred Path，支持 $O(\log n)$ 均摊的上述�
 - **Path Parent**: 路径上最浅节点的父指针（非 preferred）
 
 **操作：**
+
 - `access(v)`: 打通 $v$ 到根的路径，使这条路径成为 preferred path
 - `makeroot(v)`: 将 $v$ 变为树根（access + splay + 翻转）
 - `findroot(v)`: 找树根
@@ -9226,6 +9237,7 @@ pushup(x);
 ### 9.6.1 问题引入
 
 给定一棵有根树，节点带权，支持：
+
 1. 路径 $u \to v$ 上点权加 $x$
 2. 路径 $u \to v$ 上点权和
 3. 子树加 $x$
@@ -9331,12 +9343,12 @@ struct HLD {
 
 ### 9.6.5 扩展
 
-| 扩展 | 方法 |
-|------|------|
-| 边权转点权 | 将边权下放到深度大的端点 |
-| LCA 祖先链二分 | 跳链 + 链上线段树二分 |
-| 动态换根 | 分类讨论 LCA 与当前根的关系 |
-| 长链剖分 | 用于 $O(1)$ 求 $k$ 级祖先和 $O(n)$ 维护 DP（以深度为下标） |
+| 扩展           | 方法                                                       |
+| -------------- | ---------------------------------------------------------- |
+| 边权转点权     | 将边权下放到深度大的端点                                   |
+| LCA 祖先链二分 | 跳链 + 链上线段树二分                                      |
+| 动态换根       | 分类讨论 LCA 与当前根的关系                                |
+| 长链剖分       | 用于 $O(1)$ 求 $k$ 级祖先和 $O(n)$ 维护 DP（以深度为下标） |
 
 ---
 
@@ -9582,14 +9594,14 @@ struct Splay {
 
 ### 9.7.4 对比
 
-| 特性 | Treap | FHQ Treap | Splay |
-|------|-------|-----------|-------|
-| 实现难度 | 中 | 低 | 高 |
+| 特性       | Treap            | FHQ Treap        | Splay            |
+| ---------- | ---------------- | ---------------- | ---------------- |
+| 实现难度   | 中               | 低               | 高               |
 | 均摊复杂度 | 期望 $O(\log n)$ | 期望 $O(\log n)$ | 均摊 $O(\log n)$ |
-| 最坏复杂度 | $O(n)$ | $O(n)$ | 均摊保证 |
-| 持久化 | 否 | 是 | 否 |
-| 区间操作 | 有限 | 易 | 是（翻转等） |
-| 常数 | 中 | 中 | 较小 |
+| 最坏复杂度 | $O(n)$           | $O(n)$           | 均摊保证         |
+| 持久化     | 否               | 是               | 否               |
+| 区间操作   | 有限             | 易               | 是（翻转等）     |
+| 常数       | 中               | 中               | 较小             |
 
 ---
 
@@ -9679,6 +9691,7 @@ for (char c : t) ans = (ans << 1) & pos[c - 'a'];
 ### 9.9.1 核心思想
 
 将长度为 $n$ 的数组分成 $\sqrt{n}$ 块，每块大小 $\le \sqrt{n}$：
+
 - 整块操作：$O(\sqrt{n})$ 块，每块 $O(1)$
 - 零散操作：边界 $O(\sqrt{n})$ 个元素
 - 单次操作 $O(\sqrt{n})$
@@ -9732,13 +9745,13 @@ struct Block {
 
 ### 9.9.3 经典应用
 
-| 问题 | 分块思路 |
-|------|----------|
+| 问题                   | 分块思路                                         |
+| ---------------------- | ------------------------------------------------ |
 | 区间加 + 区间第 $k$ 小 | 块内维护排序数组，零散块重构 $O(\sqrt{n}\log n)$ |
-| 区间取 min / max | 块内维护极值 + 懒惰比较标记 |
-| 区间开根号 | 当块内全为 0/1 时跳过 |
-| 区间众数（在线） | 预处理块间众数和前缀频率，$O(n\sqrt{n})$ |
-| 莫队 | 基于分块的离线查询（见 9.1） |
+| 区间取 min / max       | 块内维护极值 + 懒惰比较标记                      |
+| 区间开根号             | 当块内全为 0/1 时跳过                            |
+| 区间众数（在线）       | 预处理块间众数和前缀频率，$O(n\sqrt{n})$         |
+| 莫队                   | 基于分块的离线查询（见 9.1）                     |
 
 ### 9.9.4 块的大小选择
 
@@ -9831,6 +9844,7 @@ struct VirtualTree {
 重定向每条无向边：度数大的指向度数小的，度数相同时按编号。得到 DAG，每个节点出度 $\le \sqrt{m}$（因为若一个点出度 $> \sqrt{m}$，则其所有邻居度 $\ge$ 它，总度数至少 $\sqrt{m} \times \sqrt{m} = m$，矛盾）。
 
 算法：
+
 1. 按上述规则重定向每条边
 2. 对于每个点 $u$，标记其所有出边邻居
 3. 对于 $u$ 的每个出边邻居 $v$，检查 $v$ 的所有出边邻居 $w$ 是否被标记——若是，则 $(u,v,w)$ 构成三元环
@@ -10036,16 +10050,16 @@ Circle minCircle(vector<Point>& pts) {
 
 ### 9.13.5 随机化算法总结
 
-| 技巧 | 典型问题 | 复杂度 |
-|------|----------|--------|
-| XorHash | 可重集判等、区间 shuffle 检测 | $O(n)$ 预处理，$O(1)$ 查询 |
-| 随机打乱 | 消除输入序最坏影响、随机化贪心 | $O(n)$ 或 $T \times f(n)$ |
-| 随机 pivot（QuickSelect） | 第 $k$ 小元素 | 期望 $O(n)$ |
-| 随机增量 | 最小圆覆盖、线性规划（2D） | 期望 $O(n)$ |
-| 模拟退火 | 组合优化、TSP 近似 | 依迭代次数 |
-| 随机分治 | 平面最近点对 | $O(n)$ 期望 |
-| Pollard's Rho | 大整数分解 | $O(n^{1/4})$ 期望 |
-| Miller-Rabin | 素数判定 | $O(k \log^3 n)$ |
+| 技巧                      | 典型问题                       | 复杂度                     |
+| ------------------------- | ------------------------------ | -------------------------- |
+| XorHash                   | 可重集判等、区间 shuffle 检测  | $O(n)$ 预处理，$O(1)$ 查询 |
+| 随机打乱                  | 消除输入序最坏影响、随机化贪心 | $O(n)$ 或 $T \times f(n)$  |
+| 随机 pivot（QuickSelect） | 第 $k$ 小元素                  | 期望 $O(n)$                |
+| 随机增量                  | 最小圆覆盖、线性规划（2D）     | 期望 $O(n)$                |
+| 模拟退火                  | 组合优化、TSP 近似             | 依迭代次数                 |
+| 随机分治                  | 平面最近点对                   | $O(n)$ 期望                |
+| Pollard's Rho             | 大整数分解                     | $O(n^{1/4})$ 期望          |
+| Miller-Rabin              | 素数判定                       | $O(k \log^3 n)$            |
 
 ---
 
@@ -10069,19 +10083,20 @@ $$tree(u) + tree(v) - tree(lca) - tree(fa[lca])$$
 
 ### 例 3：区间 Mex（多种离线做法）
 
-| 做法 | 复杂度 |
-|------|--------|
-| 莫队 + BIT | $O(n\sqrt{n}\log n)$ |
-| 莫队 + 分块 | $O(n\sqrt{n})$ |
-| 主席树 | $O((n+q)\log n)$ 在线 |
-| 整体二分 | $O((n+q)\log n)$ 离线 |
-| 线段树上二分 | $O((n+q)\log n)$ |
+| 做法         | 复杂度                |
+| ------------ | --------------------- |
+| 莫队 + BIT   | $O(n\sqrt{n}\log n)$  |
+| 莫队 + 分块  | $O(n\sqrt{n})$        |
+| 主席树       | $O((n+q)\log n)$ 在线 |
+| 整体二分     | $O((n+q)\log n)$ 离线 |
+| 线段树上二分 | $O((n+q)\log n)$      |
 
 ---
 
-*本讲涵盖了竞赛中最常用的 13 种高级技巧，建议按照专题分别针对性刷题，掌握每种技巧的模板和变形。*
+_本讲涵盖了竞赛中最常用的 13 种高级技巧，建议按照专题分别针对性刷题，掌握每种技巧的模板和变形。_
 
 ---
+
 # 附录
 
 ---
@@ -10288,14 +10303,14 @@ void solve() {
 
 **常见需要清空的结构**：
 
-| 结构 | 清空方式 |
-|------|----------|
-| `vector<int> adj[N]` | `for i in 1..n: adj[i].clear()` |
-| `int vis[N]`, `int cnt[N]` | `for i in 1..n: vis[i] = 0` |
-| `set/map` 全局变量 | `.clear()` |
-| `queue/stack` 全局变量 | `while (!q.empty()) q.pop()` 或 `= queue<int>()` |
-| 并查集 `fa[N]` | `for i in 1..n: fa[i] = i` |
-| 全局计数器变量 | 重置为 0 |
+| 结构                       | 清空方式                                         |
+| -------------------------- | ------------------------------------------------ |
+| `vector<int> adj[N]`       | `for i in 1..n: adj[i].clear()`                  |
+| `int vis[N]`, `int cnt[N]` | `for i in 1..n: vis[i] = 0`                      |
+| `set/map` 全局变量         | `.clear()`                                       |
+| `queue/stack` 全局变量     | `while (!q.empty()) q.pop()` 或 `= queue<int>()` |
+| 并查集 `fa[N]`             | `for i in 1..n: fa[i] = i`                       |
+| 全局计数器变量             | 重置为 0                                         |
 
 **技巧**：在 Codeforces 等多测题目中，将 `solve()` 设计为接收参数 `n, m, ...` 的函数，并在函数开头局部定义数据结构，利用 RAII 自动析构。若全局数组不可避免，在 `while (t--)` 循环内手动清空。
 
@@ -10341,12 +10356,12 @@ for (int iter = 0; iter < 100; iter++) {
 
 **经验法则**：
 
-| 误差要求 | EPS 取值 |
-|----------|----------|
-| `1e-6` 绝对/相对误差 | `EPS = 1e-9` |
-| `1e-9` 绝对/相对误差 | `EPS = 1e-12` |
-| 一般几何题 | `EPS = 1e-9` 或 `1e-10` |
-| long double | `EPS = 1e-12` 或更小 |
+| 误差要求             | EPS 取值                |
+| -------------------- | ----------------------- |
+| `1e-6` 绝对/相对误差 | `EPS = 1e-9`            |
+| `1e-9` 绝对/相对误差 | `EPS = 1e-12`           |
+| 一般几何题           | `EPS = 1e-9` 或 `1e-10` |
+| long double          | `EPS = 1e-12` 或更小    |
 
 ---
 
@@ -10413,12 +10428,12 @@ const long long INF = 1e18;
 
 **常用 INF 值一览**：
 
-| 类型 | 值 | 适用场景 |
-|------|------|----------|
-| `int INF` | `0x3f3f3f3f` (≈1.06e9) | 小图、不超 int 范围的 DP |
-| `long long INF` | `1e18` | Dijkstra、Floyd、带权图一般情况 |
-| `int INF` | `1e9` | 某些 DP 和极小图 |
-| `memset` | `0x3f` (逐字节) | `memset(dist, 0x3f, sizeof dist)` → 每个 int 约为 `0x3f3f3f3f` |
+| 类型            | 值                     | 适用场景                                                       |
+| --------------- | ---------------------- | -------------------------------------------------------------- |
+| `int INF`       | `0x3f3f3f3f` (≈1.06e9) | 小图、不超 int 范围的 DP                                       |
+| `long long INF` | `1e18`                 | Dijkstra、Floyd、带权图一般情况                                |
+| `int INF`       | `1e9`                  | 某些 DP 和极小图                                               |
+| `memset`        | `0x3f` (逐字节)        | `memset(dist, 0x3f, sizeof dist)` → 每个 int 约为 `0x3f3f3f3f` |
 
 ---
 
@@ -10490,6 +10505,7 @@ for (int i = 1; i <= n; i++) {
 ```
 
 **直观理解**：
+
 - 递减时，`dp[j - w[i]]` 来自上一层（物品 i 未被使用过），确保每个物品只用一次。
 - 递增时，`dp[j - w[i]]` 可能已经用过当前物品，允许重复选取。
 
@@ -10663,6 +10679,7 @@ void dfs(int u, int d) {
 ```
 
 **常见出错场景**：
+
 - DFS/BFS 中的时间戳计数器
 - 递归回溯中的临时累计值
 - 分治算法中跨递归层共享的辅助数组索引
@@ -10701,6 +10718,7 @@ int res = (a ? b : c) ? d : e;   // 按需加括号
 > 当涉及位运算（`&`, `|`, `^`, `<<`, `>>`）与比较/算术运算符混合时，**一律加括号**。多写一对括号的代价远低于赛后 WA 后逐行查错。
 
 **经验口诀**：
+
 - 位运算全加括号：
   ```cpp
   if ((mask & bit) != 0)        // 不要写成 if (mask & bit != 0)
@@ -10717,17 +10735,17 @@ int res = (a ? b : c) ? d : e;   // 按需加括号
 
 ### 主要参考项目
 
-| 项目 | 链接 | 协议 | 说明 |
-|------|------|------|------|
-| **KACTL** | [github.com/kth-competitive-programming/kactl](https://github.com/kth-competitive-programming/kactl) | CC0 | KTH 皇家理工学院 ICPC 团队的竞赛模板库，质量极高，涵盖几乎所有算法竞赛核心主题 |
-| **AtCoder Library (ACL)** | [github.com/atcoder/ac-library](https://github.com/atcoder/ac-library) | CC0 | AtCoder 官方算法库，包含经过工业级测试的 SegTree、LazySegTree、Fenwick Tree、MCFGraph 等实现 |
-| **OI-wiki** | [oi-wiki.org](https://oi-wiki.org) / [github.com/OI-wiki/OI-wiki](https://github.com/OI-wiki/OI-wiki) | CC BY-SA 4.0 | 中文算法竞赛知识库，涵盖从入门到 ICPC 级别的系统知识，本站的理论讲解主要参考此处 |
-| **cp-algorithms** | [cp-algorithms.com](https://cp-algorithms.com) / [github.com/cp-algorithms/cp-algorithms](https://github.com/cp-algorithms/cp-algorithms) | CC BY-SA 4.0 | 英文算法竞赛百科，e-maxx 的英文翻译与扩充版本，数学和字符串部分的推导尤为详尽 |
-| **hh2048/XCPC** (jiangly 模板) | [github.com/hh2048/XCPC](https://github.com/hh2048/XCPC) | GPL-3.0 | 集中收录 jiangly 等顶尖选手在 XCPC 竞赛中使用的模板，代码风格简洁现代 |
-| **ShahjalalShohag/code-library** | [github.com/ShahjalalShohag/code-library](https://github.com/ShahjalalShohag/code-library) | MIT | 主题全面、注释丰富的算法代码库，数论和组合数学部分尤为出色 |
-| **hourai** (HIT hourai) | [github.com/DWaveletT/hourai](https://github.com/DWaveletT/hourai) | CC BY-SA 4.0 | 哈尔滨工业大学 hourai 队伍的竞赛模板，数据结构与图论实现质量高 |
-| **old-yan/CP-template** | [github.com/old-yan/CP-template](https://github.com/old-yan/CP-template) | — | 结构清晰的中文竞赛模板，适合初学者参考 |
-| **f_zyj ACM 模板** | [github.com/snake-lvyonghao/ACM](https://github.com/snake-lvyonghao/ACM) | — | 经典 ACM 模板库，广泛流传于中文算法竞赛圈 |
+| 项目                             | 链接                                                                                                                                      | 协议         | 说明                                                                                         |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
+| **KACTL**                        | [github.com/kth-competitive-programming/kactl](https://github.com/kth-competitive-programming/kactl)                                      | CC0          | KTH 皇家理工学院 ICPC 团队的竞赛模板库，质量极高，涵盖几乎所有算法竞赛核心主题               |
+| **AtCoder Library (ACL)**        | [github.com/atcoder/ac-library](https://github.com/atcoder/ac-library)                                                                    | CC0          | AtCoder 官方算法库，包含经过工业级测试的 SegTree、LazySegTree、Fenwick Tree、MCFGraph 等实现 |
+| **OI-wiki**                      | [oi-wiki.org](https://oi-wiki.org) / [github.com/OI-wiki/OI-wiki](https://github.com/OI-wiki/OI-wiki)                                     | CC BY-SA 4.0 | 中文算法竞赛知识库，涵盖从入门到 ICPC 级别的系统知识，本站的理论讲解主要参考此处             |
+| **cp-algorithms**                | [cp-algorithms.com](https://cp-algorithms.com) / [github.com/cp-algorithms/cp-algorithms](https://github.com/cp-algorithms/cp-algorithms) | CC BY-SA 4.0 | 英文算法竞赛百科，e-maxx 的英文翻译与扩充版本，数学和字符串部分的推导尤为详尽                |
+| **hh2048/XCPC** (jiangly 模板)   | [github.com/hh2048/XCPC](https://github.com/hh2048/XCPC)                                                                                  | GPL-3.0      | 集中收录 jiangly 等顶尖选手在 XCPC 竞赛中使用的模板，代码风格简洁现代                        |
+| **ShahjalalShohag/code-library** | [github.com/ShahjalalShohag/code-library](https://github.com/ShahjalalShohag/code-library)                                                | MIT          | 主题全面、注释丰富的算法代码库，数论和组合数学部分尤为出色                                   |
+| **hourai** (HIT hourai)          | [github.com/DWaveletT/hourai](https://github.com/DWaveletT/hourai)                                                                        | CC BY-SA 4.0 | 哈尔滨工业大学 hourai 队伍的竞赛模板，数据结构与图论实现质量高                               |
+| **old-yan/CP-template**          | [github.com/old-yan/CP-template](https://github.com/old-yan/CP-template)                                                                  | —            | 结构清晰的中文竞赛模板，适合初学者参考                                                       |
+| **f_zyj ACM 模板**               | [github.com/snake-lvyonghao/ACM](https://github.com/snake-lvyonghao/ACM)                                                                  | —            | 经典 ACM 模板库，广泛流传于中文算法竞赛圈                                                    |
 
 ### 其他辅助资源
 
@@ -10762,4 +10780,4 @@ int res = (a ? b : c) ? d : e;   // 按需加括号
 
 ---
 
-*最后更新于 2026 年 8 月*
+_最后更新于 2026 年 8 月_
