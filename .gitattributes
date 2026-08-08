@@ -1,0 +1,20 @@
+* text=auto
+
+# C++ source files — force LF line endings
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.h text eol=lf
+*.cc text eol=lf
+*.cxx text eol=lf
+
+# Markdown and config files
+*.md text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+Makefile text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.pdf binary

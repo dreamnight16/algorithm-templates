@@ -1,0 +1,41 @@
+# Compiled output
+*.o
+*.obj
+*.exe
+*.out
+*.class
+a.out
+
+# Debug
+*.ilk
+*.pdb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+
+# Package
+*.deb
+*.rpm
+*.tar.gz
+
+# Profiling
+*.prof
+perf.data
+perf.data.old
+callgrind.out.*
+
+# OS
+Thumbs.db
+Desktop.ini
