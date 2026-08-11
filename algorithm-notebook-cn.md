@@ -487,6 +487,31 @@ void range_add(vi& diff, int l, int r, int val) {
 }
 ```
 
+#### 异或差分 (XOR Difference)
+
+区间异或修改与加法差分类似：对 $[l,r]$ 整体 $\oplus x$，只需 `diff[l] ^= x, diff[r+1] ^= x`，前缀 XOR 还原。原理：$x \oplus x = 0$ 使得右端点后自动抵消。
+
+```cpp
+// ---- 异或差分：区间异或 O(1)，还原 O(N) ----
+void range_xor(vi& diff, int l, int r, int val) {
+    diff[l] ^= val;
+    if (r + 1 < sz(diff)) diff[r + 1] ^= val;
+}
+void restore_xor(const vi& diff, vi& a) {
+    int cur = 0;
+    rep(i, 0, sz(a)) { cur ^= diff[i]; a[i] = cur; }
+}
+
+// ---- 树上路径异或标记（路径打 tag）----
+// u ^= x, v ^= x, lca ^= x, fa[lca] ^= x，然后 DFS 合并
+// ---- 边区间：边 (u,v) 影响 [u, v-1] ----
+// diff[u] ^= w; diff[v] ^= w;  // 右端点 (v-1)+1 = v
+```
+
+常见场景：区间异或修改/状态切换（toggle）、树上路径异或标记、边集奇偶性判断。
+
+---
+
 ### 2.2 树状数组 (Fenwick Tree / Binary Indexed Tree)
 
 单点修改与前缀和查询均为 O(log N)。无法直接处理区间修改（需要两个 BIT 实现）。空间 O(N)。
@@ -9976,30 +10001,83 @@ int meetInMiddleKnapsack(int n, vector<int>& w, vector<int>& v, int maxW) {
 给每种可能的值分配一个随机 64 位整数，集合的哈希值为所有元素的异或和。判断两集合是否相等：比较哈希值，错误概率 $O(2^{-64})$。
 
 ```cpp
-// 判断区间是否包含的每种元素出现次数相同（shuffle 问题）
-// 对每种值 val，分配随机 hash[val]，则区间内可重集哈希 = XOR of hash[a[i]]
+// ---- XorHash 基础模板 ----
+// 区间可重集哈希：对每种值分配随机哈希，前缀 XOR 维护
 mt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());
-unsigned long long hashVal[MAXN];
+unordered_map<int, ull> h;
+auto get_hash = [&](int val) -> ull {
+    if (!h.count(val)) h[val] = rng();
+    return h[val];
+};
 
-// 初始化
-for (int i = 1; i <= max_val; i++) hashVal[i] = rng();
-
-// 前缀 XorHash
-unsigned long long pre[MAXN];
-for (int i = 1; i <= n; i++) pre[i] = pre[i-1] ^ hashVal[a[i]];
+vector<ull> pre(n + 1);
+for (int i = 1; i <= n; i++) pre[i] = pre[i - 1] ^ get_hash(a[i]);
 // 区间 [l, r] 可重集哈希: pre[r] ^ pre[l-1]
+
+// ---- 树上路径集合哈希（LCA + 树上前缀 XorHash）----
+// 点权：pre[x] = 根到 x 路径上所有节点哈希的 XOR
+// 边权：pre[x] = 根到 x 路径上所有边哈希的 XOR
+// 路径 u↔v 哈希 = pre[u] ^ pre[v] ^ pre[lca] ^ pre[fa[lca]]
+
+// ---- 排列判等：判断区间是否恰好包含 1..n 各一次 ----
+ull target = 0;
+for (int i = 1; i <= n; i++) target ^= get_hash(i);
+// 区间 [l, r] 为排列 ⇔ r-l+1==n ∧ pre[r]^pre[l-1]==target
+
+// ---- 异或差分 + 随机哈希：边 → 连续区间映射 ----
+// 边 (u,v) 影响编号区间 [u, v-1]，用异或差分维护区间内边集
+vector<ull> diff(n + 2), cur_hash(n + 1);
+for (auto [u, v, eid] : edges) {
+    ull w = get_hash(eid);
+    diff[u] ^= w, diff[v] ^= w;   // 区间 [u, v-1]，右端点 (v-1)+1=v
+}
+ull cur = 0;
+for (int i = 1; i <= n; i++) { cur ^= diff[i]; cur_hash[i] = cur; }
+// cur_hash[i] != 0 ⇔ 位置 i 被奇数条边覆盖（偶数条自动抵消）
 ```
 
-#### 常见用法
+#### 双重哈希 (Double Hashing)
 
-- 判断两个多重集是否相等（XorHash）
-- 判断排列（1..n 每种恰好出现一次）
-- 树上路径集合判等（带 LCA）
-- 图同构概率筛（Weisfeiler-Lehman 哈希）
+使用两组独立随机种子，碰撞概率从 $2^{-64}$ 降至 $2^{-128}$。
 
-#### 双重哈希
+```cpp
+struct DoubleHash {
+    ull h1, h2;
+    bool operator==(const DoubleHash& o) const { return h1 == o.h1 && h2 == o.h2; }
+    DoubleHash operator^(const DoubleHash& o) const { return {h1 ^ o.h1, h2 ^ o.h2}; }
+};
 
-使用两个不同模数或两组随机种子，错误概率降至 $2^{-128}$。
+mt19937_64 rng1(42), rng2(137);
+auto get_double_hash = [&](int val) -> DoubleHash {
+    static unordered_map<int, DoubleHash> cache;
+    if (!cache.count(val)) cache[val] = {rng1(), rng2()};
+    return cache[val];
+};
+```
+
+#### XorHash 封装模板
+
+```cpp
+template <typename T = int>
+struct XorHash {
+    mt19937_64 rng;
+    unordered_map<T, ull> h;
+    XorHash() : rng(chrono::steady_clock::now().time_since_epoch().count()) {}
+
+    ull get(T val) {
+        if (!h.count(val)) h[val] = rng();
+        return h[val];
+    }
+    vector<ull> build_prefix(const auto& a) {  // C++20
+        vector<ull> p(sz(a) + 1);
+        for (int i = 0; i < sz(a); i++) p[i + 1] = p[i] ^ get(a[i]);
+        return p;
+    }
+    ull query(const vector<ull>& p, int l, int r) { return p[r + 1] ^ p[l]; }
+};
+```
+
+常见用法：区间可重集判等、树上路径点/边集判等、排列检测、边区间覆盖（异或差分 + 随机哈希）、字符串多重集比较、图同构概率筛（WL 哈希）。
 
 ### 9.13.3 随机打乱 (Random Shuffle)
 
