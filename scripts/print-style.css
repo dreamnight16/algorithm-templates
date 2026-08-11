@@ -1,52 +1,54 @@
-/* === Print-Optimized Stylesheet for Algorithm Notebook === */
-/* Designed for A4, single-column compact layout, grayscale-friendly */
+/* === Contest-Ready Print Stylesheet — inspired by KACTL === */
+/* Compact, dense, minimal whitespace — designed for quick in-contest lookup */
 
 @page {
   size: A4;
-  margin: 14mm 13mm 14mm 13mm;
+  margin: 11mm 10mm 11mm 10mm;
   @bottom-center {
     content: counter(page);
     font-family: "Helvetica Neue", "PingFang SC", sans-serif;
-    font-size: 7pt;
-    color: #888;
+    font-size: 6pt;
+    color: #999;
   }
 }
 
-/* === Typography === */
+/* === Base === */
 html {
   font-family: "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 8.5pt;
-  line-height: 1.45;
+  font-size: 7.5pt;
+  line-height: 1.35;
   color: #1a1a1a;
 }
 
 body {
   margin: 0;
   padding: 0;
+  widows: 2;
+  orphans: 2;
 }
 
-/* === Compact Title (no wasted paper) === */
+/* === Compact Title === */
 h1 {
-  font-size: 12pt;
+  font-size: 10pt;
   font-weight: 700;
-  margin: 0 0 2pt 0;
-  line-height: 1.2;
-  color: #111;
+  margin: 0 0 1pt 0;
+  line-height: 1.1;
 }
 
 h1 + blockquote {
-  font-size: 7.5pt;
-  color: #666;
+  font-size: 6.5pt;
+  color: #777;
   border: none;
   padding: 0;
-  margin: 0 0 6pt 0;
+  margin: 0 0 4pt 0;
 }
 
-/* === Table of Contents (auto-generated, with page numbers) === */
+/* === Table of Contents (auto, with page numbers) === */
 nav#TOC {
-  page-break-after: always;
-  font-size: 7.5pt;
-  line-height: 1.7;
+  column-count: 2;
+  column-gap: 12pt;
+  font-size: 6.5pt;
+  line-height: 1.5;
 }
 
 nav#TOC a {
@@ -67,100 +69,81 @@ nav#TOC ul {
 
 nav#TOC > ul > li {
   font-weight: 600;
-  margin-top: 3pt;
+  margin-top: 2pt;
 }
 
 nav#TOC > ul > li > ul > li {
   font-weight: 400;
-  margin-left: 10pt;
+  margin-left: 8pt;
 }
 
 nav#TOC > ul > li > ul > li > ul {
-  display: none; /* hide 4th-level TOC entries to save space */
+  display: none;
 }
 
-/* Hide the manual TOC in the body (auto-TOC already covers it) */
+/* Hide manual TOC in body (auto-TOC covers it) */
+h2#目录-table-of-contents,
 h2#目录-table-of-contents ~ ul,
 h2#目录-table-of-contents ~ ol {
   display: none;
 }
-h2#目录-table-of-contents {
-  display: none;
-}
 
-/* === Section Headers === */
+/* === Section Headers — compact, no forced page breaks === */
 h2 {
-  font-size: 13pt;
+  font-size: 10pt;
   font-weight: 700;
-  margin: 16pt 0 6pt 0;
-  padding-bottom: 2pt;
-  border-bottom: 1.2pt solid #333;
-  page-break-before: always;
+  margin: 10pt 0 3pt 0;
+  padding-bottom: 1pt;
+  border-bottom: 1pt solid #444;
   page-break-after: avoid;
-  color: #111;
-}
-
-h2:first-of-type {
-  page-break-before: avoid;
 }
 
 h3 {
-  font-size: 10pt;
+  font-size: 8pt;
   font-weight: 700;
-  margin: 12pt 0 4pt 0;
-  page-break-before: always;
+  margin: 7pt 0 2pt 0;
   page-break-after: avoid;
-  color: #222;
-}
-
-h3:first-of-type {
-  page-break-before: avoid;
 }
 
 h4 {
-  font-size: 8.5pt;
+  font-size: 7.5pt;
   font-weight: 700;
-  margin: 10pt 0 2pt 0;
+  margin: 5pt 0 1pt 0;
   page-break-after: avoid;
-  color: #333;
 }
 
-/* === Paragraphs and Lists === */
+/* === Paragraphs === */
 p {
-  margin: 2pt 0 4pt 0;
-  orphans: 3;
-  widows: 3;
+  margin: 1pt 0 2pt 0;
 }
 
+/* === Lists === */
 ul, ol {
-  margin: 2pt 0 4pt 0;
-  padding-left: 14pt;
+  margin: 1pt 0 2pt 0;
+  padding-left: 12pt;
 }
 
 li {
-  margin: 1pt 0;
+  margin: 0;
 }
 
-/* === Links === */
+/* === Links — no decoration in print === */
 a {
   color: #1a1a1a;
   text-decoration: none;
 }
 
-/* === Code Blocks === */
+/* === Code Blocks — the most important element === */
 pre {
-  background: #f8f8f8;
-  border: 0.4pt solid #ddd;
-  border-radius: 2pt;
-  padding: 4pt 6pt;
-  margin: 4pt 0 6pt 0;
+  background: #fafafa;
+  border: 0.3pt solid #ddd;
+  border-radius: 1pt;
+  padding: 2pt 4pt;
+  margin: 2pt 0 3pt 0;
   font-family: "SF Mono", "Menlo", "JetBrains Mono", "Cascadia Code", "Consolas", monospace;
-  font-size: 6.5pt;
-  line-height: 1.25;
-  overflow-x: auto;
+  font-size: 5.5pt;
+  line-height: 1.2;
   white-space: pre;
-  orphans: 5;
-  widows: 5;
   page-break-inside: avoid;
 }
 
@@ -171,20 +154,19 @@ pre code {
   padding: 0;
 }
 
-/* === Inline Code === */
 code {
   font-family: "SF Mono", "Menlo", "JetBrains Mono", "Consolas", monospace;
-  font-size: 7pt;
-  background: #f0f0f0;
+  font-size: 6pt;
+  background: #f3f3f3;
   padding: 0.5pt 2pt;
   border-radius: 1pt;
 }
 
-/* === Tables === */
+/* === Tables — compact === */
 table {
-  font-size: 7pt;
+  font-size: 6pt;
   border-collapse: collapse;
-  margin: 4pt 0 6pt 0;
+  margin: 2pt 0 3pt 0;
   width: 100%;
   page-break-inside: avoid;
 }
@@ -192,77 +174,44 @@ table {
 th {
   background: #eee;
   font-weight: 700;
-  padding: 2pt 4pt;
-  border: 0.3pt solid #ccc;
+  padding: 1pt 3pt;
+  border: 0.2pt solid #ccc;
   text-align: left;
 }
 
 td {
-  padding: 1.5pt 4pt;
-  border: 0.3pt solid #ddd;
+  padding: 1pt 3pt;
+  border: 0.2pt solid #ddd;
 }
 
 /* === Blockquotes === */
 blockquote {
-  border-left: 2pt solid #ccc;
-  padding: 2pt 0 2pt 8pt;
-  margin: 4pt 0;
-  color: #555;
-  font-size: 7.5pt;
+  border-left: 1.5pt solid #ccc;
+  padding: 1pt 0 1pt 6pt;
+  margin: 2pt 0;
+  color: #666;
+  font-size: 6.5pt;
 }
 
 /* === Horizontal Rules === */
 hr {
   border: none;
-  border-top: 0.3pt solid #ddd;
-  margin: 8pt 0;
+  border-top: 0.2pt solid #ddd;
+  margin: 4pt 0;
 }
 
 /* === Strong / Emphasis === */
-strong {
-  color: #111;
-}
+strong { color: #111; }
+em { color: #555; }
 
-em {
-  color: #444;
-}
-
-/* === Syntax Highlighting (pandoc-style, grayscale-optimized) === */
-/* Comments */
-code span.co, code span.comment { color: #666; font-style: italic; }
-/* Keywords */
-code span.kw, code span.keyword { color: #111; font-weight: 700; }
-/* Strings */
-code span.st, code span.string { color: #444; }
-/* Numbers */
-code span.dv, code span.number { color: #333; }
-/* Functions */
-code span.fu, code span.function { color: #111; }
-/* Types */
-code span.dt, code span.type { color: #222; font-weight: 600; }
-/* Preprocessor */
-code span.pp, code span.preprocessor { color: #555; }
-/* Operators */
-code span.op { color: #333; }
-/* Normal */
-code span.ot, code span.va, code span.cf, code span.al { color: #1a1a1a; }
-
-/* === Print-specific Adjustments === */
-@media print {
-  body {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-  pre {
-    background: #fafafa !important;
-  }
-}
-
-/* === Avoid Breaks Inside === */
-h2, h3, h4 {
-  page-break-after: avoid;
-}
-
-h2 + p, h3 + p, h4 + p {
-  page-break-before: avoid;
-}
+/* === Syntax Highlighting (grayscale-optimized) === */
+code span.co, code span.comment     { color: #888; font-style: italic; }
+code span.kw, code span.keyword     { color: #111; font-weight: 700; }
+code span.st, code span.string      { color: #555; }
+code span.dv, code span.number      { color: #444; }
+code span.fu, code span.function    { color: #111; }
+code span.dt, code span.type        { color: #222; font-weight: 600; }
+code span.pp, code span.preprocessor{ color: #666; }
+code span.op                        { color: #444; }
+code span.ot, code span.va,
+code span.cf, code span.al          { color: #1a1a1a; }
