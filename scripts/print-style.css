@@ -12,12 +12,6 @@
   }
 }
 
-@page :first {
-  @bottom-center {
-    content: none;
-  }
-}
-
 /* === Typography === */
 html {
   font-family: "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -31,27 +25,21 @@ body {
   padding: 0;
 }
 
-/* === Title Page === */
+/* === Compact Title (no wasted paper) === */
 h1 {
-  font-size: 22pt;
+  font-size: 12pt;
   font-weight: 700;
-  text-align: center;
-  margin: 60mm 0 8mm 0;
-  letter-spacing: 1pt;
-  page-break-before: avoid;
-  page-break-after: avoid;
+  margin: 0 0 2pt 0;
   line-height: 1.2;
   color: #111;
 }
 
 h1 + blockquote {
-  text-align: center;
-  font-size: 9pt;
+  font-size: 7.5pt;
   color: #666;
   border: none;
   padding: 0;
-  margin: 0 0 40mm 0;
-  page-break-after: always;
+  margin: 0 0 6pt 0;
 }
 
 /* === Table of Contents === */
