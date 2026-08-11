@@ -42,18 +42,21 @@ h1 + blockquote {
   margin: 0 0 6pt 0;
 }
 
-/* === Table of Contents === */
+/* === Table of Contents (auto-generated, with page numbers) === */
 nav#TOC {
   page-break-after: always;
-  column-count: 2;
-  column-gap: 18pt;
   font-size: 7.5pt;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
 nav#TOC a {
   color: #1a1a1a;
   text-decoration: none;
+}
+
+nav#TOC a::after {
+  content: leader(".") target-counter(attr(href), page);
+  font-variant-numeric: tabular-nums;
 }
 
 nav#TOC ul {
@@ -69,11 +72,20 @@ nav#TOC > ul > li {
 
 nav#TOC > ul > li > ul > li {
   font-weight: 400;
-  margin-left: 8pt;
+  margin-left: 10pt;
 }
 
 nav#TOC > ul > li > ul > li > ul {
   display: none; /* hide 4th-level TOC entries to save space */
+}
+
+/* Hide the manual TOC in the body (auto-TOC already covers it) */
+h2#目录-table-of-contents ~ ul,
+h2#目录-table-of-contents ~ ol {
+  display: none;
+}
+h2#目录-table-of-contents {
+  display: none;
 }
 
 /* === Section Headers === */
