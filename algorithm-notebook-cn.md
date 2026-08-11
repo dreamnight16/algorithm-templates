@@ -85,6 +85,8 @@ using vvi = vector<vi>;
 using vvll = vector<vll>;
 
 // ---- 宏 ----
+#define endl "\n"
+#define spc " "
 #define all(x) (x).begin(), (x).end()
 #define sz(x) (int)(x).size()
 #define rep(i, a, b) for (int i = (a); i < (b); ++i)
