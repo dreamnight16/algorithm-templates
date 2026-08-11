@@ -14,8 +14,7 @@
 
 ---
 
-<a id="1-快速参考"></a>
-## 1. 快速参考
+<h2 id="1-快速参考">1. 快速参考</h2>
 
 ### 复杂度速查表 (Complexity Cheat Sheet)
 
@@ -440,8 +439,7 @@ struct HLD {
 
 ---
 
-<a id="2-基础数据结构"></a>
-## 2. 基础数据结构 (Basic Data Structures)
+<h2 id="2-基础数据结构">2. 基础数据结构 (Basic Data Structures)</h2>
 
 ### 2.1 前缀和与差分 (Prefix Sum & Difference Array)
 
@@ -1287,8 +1285,7 @@ struct custom_hash {
 // ordered_set.order_of_key(x) —— 严格小于 x 的元素个数
 ```
 
-<a id="3-图论"></a>
-## 3. 图论 (Graph Theory)
+<h2 id="3-图论">3. 图论 (Graph Theory)</h2>
 
 ### 3.1 Graph Representation（图的存储）
 
@@ -2609,8 +2606,7 @@ struct TwoSAT {
 - Floyd 已确认 k 循环在最外层（三重循环 k→i→j）
 - SCC 回边更新已确认使用 `dfn[y]`（非 `low[y]`），两版代码均正确
 
-<a id="4-数学与数论"></a>
-## 4. 数学与数论
+<h2 id="4-数学与数论">4. 数学与数论</h2>
 
 ### 4.1 模运算
 
@@ -3642,8 +3638,7 @@ for (int k = 0; k < n; k++)          // 最外层 k
 
 原因：k 在最外层保证"使用前 k 个顶点的最短路径"这一阶段定义成立。将 k 放在内层会丢失部分中间顶点的路径更新。
 
-<a id="5-字符串算法"></a>
-# 5. 字符串算法 (String Algorithms)
+<h1 id="5-字符串算法">5. 字符串算法 (String Algorithms)</h1>
 
 ---
 
@@ -4620,8 +4615,7 @@ vector<string> dedupCyclic(const vector<string> &words) {
 | 字符串哈希  | $O(n)$                        | $O(1)$ / 子串    | $O(n)$                        | 子串判等、二分 LCP |
 | 最小表示法  | $O(n)$                        | --               | $O(1)$                        | 循环同构判等       |
 
-<a id="6-动态规划"></a>
-# 6. 动态规划 (Dynamic Programming)
+<h1 id="6-动态规划">6. 动态规划 (Dynamic Programming)</h1>
 
 ## 6.1 背包问题 (Knapsack Problems)
 
@@ -6131,8 +6125,7 @@ vector<int> merge_items(const vector<int>& a, const vector<int>& b, int C) {
 8. **斜率优化**：交叉乘用 `__int128` 防溢出；斜率/查询不单调时用 Li Chao 树。
 9. **四边形不等式**：分治/二分栈适用于 1D/1D；Knuth 适用于区间 DP。
 
-<a id="7-计算几何"></a>
-## 7. 计算几何 (Computational Geometry)
+<h2 id="7-计算几何">7. 计算几何 (Computational Geometry)</h2>
 
 ### 7.1 基础：点与向量 (Point and Vector Basics)
 
@@ -7376,8 +7369,7 @@ vector<Face> convexHull3D(vector<P3> pts) {
 
 ---
 
-<a id="8-网络流"></a>
-# 8 网络流
+<h1 id="8-网络流">8 网络流</h1>
 
 > **网络流**是图论中最庞大的模块之一，涵盖最大流、最小割、费用流、匹配等问题。在竞赛中，网络流题目往往难在建图而非算法本身——掌握常见建模技巧比背模板更重要。
 
@@ -8747,8 +8739,7 @@ $n \times m$ 网格图上求最大独立集 / 最小覆盖：
 
 > **参考文献**：KACTL (github.com/kth-competitive-programming/kactl)、OI-wiki (oi-wiki.org)、cp-algorithms (cp-algorithms.com)、AtCoder Library (ACL)
 
-<a id="9-高级技巧"></a>
-# 9. 高级技巧 (Advanced Techniques)
+<h1 id="9-高级技巧">9. 高级技巧 (Advanced Techniques)</h1>
 
 ---
 
