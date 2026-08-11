@@ -1967,16 +1967,18 @@ struct LCA {
     int n, LOG;
     vvi up;       // up[k][v] = v 的第 2^k 级祖先
     vi depth;
-    vvi adj;
+    const vvi& adj;  // 引用外部邻接表，避免拷贝
 
-    LCA(int n_, const vvi& adj_) : n(n_), adj(adj_) {
+    LCA(int n_, int root, const vvi& adj_) : n(n_), adj(adj_) {
         LOG = 32 - __builtin_clz(n);  // floor(log2(n)) + 1
         up.assign(LOG, vi(n, -1));
         depth.resize(n);
-        dfs(0, -1);
+        dfs(root, -1);
         build();
     }
 
+    // 递归 DFS——当 N 较大（≥ 5e5）且树退化为链时可能栈溢出。
+    // 严格场合请使用下方的非递归 DFS 版本（见 struct 后的注释）。
     void dfs(int u, int p) {
         up[0][u] = p;
         for (int v : adj[u]) {
@@ -2025,6 +2027,29 @@ struct LCA {
         return v;
     }
 };
+
+// ---- 非递归 DFS（链式退化的树需要，避免栈溢出）----
+// 当 N ≥ 5e5 且树可能退化为链（如 P3379）时，递归 DFS 的 5e5 层调用会爆栈。
+// 替换方法：将 LCA 构造函数中的 dfs(root, -1) 改为 dfs_iter(root)，并加入下方代码：
+//
+//   void dfs_iter(int root) {
+//       vi stk = {root};
+//       vi par(n, -1);
+//       par[root] = -1;
+//       while (!stk.empty()) {
+//           int u = stk.back(); stk.pop_back();
+//           up[0][u] = par[u];
+//           for (int v : adj[u]) {
+//               if (v == par[u]) continue;
+//               depth[v] = depth[u] + 1;
+//               par[v] = u;
+//               stk.push_back(v);
+//           }
+//       }
+//   }
+//
+// 注意：非递归 DFS 得到的 depth 和 up[0] 与递归版本完全等价，
+// 但遍历子节点的顺序相反（不影响 LCA 正确性）。
 
 // ---- Euler Tour + RMQ LCA（O(N) 预处理，O(1) 查询）----
 // 更复杂，但查询更快。对欧拉序列建 Sparse Table。
