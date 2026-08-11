@@ -23,7 +23,7 @@
 ### 复杂度速查表 (Complexity Cheat Sheet)
 
 | 算法                       | 时间                              | 空间           | 适用场景           |
-| -------------------------- | --------------------------------- | -------------- | ------------------ | --- | ---------- |
+| -------------------------- | --------------------------------- | -------------- | ------------------ |
 | **排序**                   |                                   |                |                    |
 | `std::sort`                | O(N log N)                        | O(log N)       | 通用排序           |
 | 计数排序                   | O(N + K)                          | O(K)           | 小范围整数         |
@@ -36,6 +36,7 @@
 | BFS / DFS                  | O(N + M)                          | O(N)           | 无权图遍历         |
 | Dijkstra（二叉堆）         | O(M log N)                        | O(N)           | 非负边权           |
 | Bellman-Ford               | O(N \* M)                         | O(N)           | 允许负边权         |
+| 差分约束（SPFA 判负环）    | O(N \* M) 最坏                    | O(N + M)       | 不等式组求解       |
 | Floyd-Warshall             | O(N^3)                            | O(N^2)         | 全源最短路，N 较小 |
 | Kruskal 最小生成树         | O(M log M)                        | O(N)           | 稀疏图             |
 | Prim 最小生成树            | O(M log N)                        | O(N)           | 稠密图             |
@@ -47,7 +48,7 @@
 | Z 算法                     | O(N)                              | O(N)           | 前缀匹配           |
 | Manacher                   | O(N)                              | O(N)           | 最长回文子串       |
 | 后缀数组                   | O(N log N)                        | O(N)           | 子串查询           |
-| Aho-Corasick               | O(N + M + Z)                      | O(N \*         | Σ                  | )   | 多模式匹配 |
+| Aho-Corasick               | O(N + M + Z)                      | O(N \* \|Σ\|)  | 多模式匹配         |
 | **数学**                   |                                   |                |                    |
 | 埃氏筛                     | O(N log log N)                    | O(N)           | 筛出 N 以内的素数  |
 | Miller-Rabin               | O(K log^3 N)                      | O(1)           | 素性检测（K 轮）   |
@@ -1497,6 +1498,55 @@ vll spfa(int src, int n, const vector<vector<pii>>& adj) {
         }
     }
     return dist;
+}
+```
+
+### 3.4.1 差分约束（Difference Constraints）
+
+**English**: Difference Constraints (SPFA 判负环) | **Chinese**: 差分约束系统
+
+将不等式组 $x_a - x_b \le y$ 转化为图论最短路：建边 $b \to a$ 权值 $y$。
+因为最短路满足三角不等式 $dist[a] \le dist[b] + y$。加入超级源点 0 连所有点（权值 0），
+以 0 为源跑 SPFA，若存在负环则无解，否则 $dist[1..n]$ 为一组合法解。
+
+> 常见转化：$x_a - x_b \ge y \Rightarrow x_b - x_a \le -y$（变号转 $\le$）；$x_a = x_b \Rightarrow x_a - x_b \le 0$ 且 $x_b - x_a \le 0$。
+
+```cpp
+// ---- 差分约束（SPFA 判负环，P5960 模板）----
+// 给出 m 条形如 x_c - x_c' ≤ y 的不等式，求任意一组解，无解输出 "NO"
+// 复杂度 O(NM) 最坏，加入超级源点 0
+// 返回 {hasSolution, dist}；dist[i] = x_i 的值（i 从 1 开始）
+pair<bool, vi> diff_constraints(int n, const vector<tuple<int,int,int>>& constraints) {
+    // 建图：对于每条 x_c - x_c' ≤ y，加边 c' → c 权 y
+    vector<vector<pii>> adj(n + 1);
+    for (auto& [c, c_prime, y] : constraints) {
+        adj[c_prime].pb({c, y});  // x_c ≤ x_c' + y → dist[c] ≤ dist[c'] + y
+    }
+    // 超级源点 0 连所有点，权值 0（避免图不连通）
+    rep(i, 1, n + 1) adj[0].pb({i, 0});
+
+    vi dist(n + 1, 0);       // dist[0] = 0，其他初始 0（任意值均可，不影响解的存在性）
+    vi cnt(n + 1, 0);        // cnt[i] = i 的入队次数，> n 表示有负环
+    vector<bool> inq(n + 1, false);
+    deque<int> q;
+    q.push_back(0);
+    inq[0] = true;
+
+    while (!q.empty()) {
+        int u = q.front(); q.pop_front();
+        inq[u] = false;
+        for (auto& [v, w] : adj[u]) {
+            if (dist[v] > dist[u] + w) {
+                dist[v] = dist[u] + w;
+                if (!inq[v]) {
+                    q.push_back(v);
+                    inq[v] = true;
+                    if (++cnt[v] > n) return {false, {}};  // 负环 → 无解
+                }
+            }
+        }
+    }
+    return {true, dist};  // 有解，dist[1..n] 为答案
 }
 ```
 
