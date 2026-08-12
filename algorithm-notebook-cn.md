@@ -2606,6 +2606,31 @@ struct TwoSAT {
 - Floyd 已确认 k 循环在最外层（三重循环 k→i→j）
 - SCC 回边更新已确认使用 `dfn[y]`（非 `low[y]`），两版代码均正确
 
+### 3.20 Hall's Marriage Theorem（霍尔婚配定理）
+
+**English**: Hall's Marriage Theorem | **Chinese**: 霍尔婚配定理 / 霍尔定理
+
+二分图 $G=(L\cup R,E)$ 存在覆盖 $L$ 的匹配，当且仅当对所有 $S\subseteq L$ 有 $|N(S)|\ge|S|$，
+其中 $N(S)$ 为 $S$ 的邻集。
+
+**竞赛常见转化**：排序 $b_1<\dots<b_n$ 后，Hall 条件等价于 $b_i\le 2i-1$（1-indexed）。
+常用于将"分配/匹配"问题转化为排序后的不等式约束。
+
+```cpp
+// ---- Hall 条件检测（排序后贪心验证）----
+// 检查已排序集合 b[0..n-1] 是否满足 b_i ≤ 2i+1（0-indexed）
+// 典型场景：判断能否为每个"位置"分配一个 ≥ 某下限的元素
+// 复杂度 O(N log N)（排序主导）| 1-indexed: b_i ≤ 2i-1
+bool check_hall(vi b) {
+    sort(all(b));
+    rep(i, 0, sz(b)) if (b[i] > 2 * i + 1) return false;
+    return true;
+}
+```
+
+> 充分性证明：若条件成立，排序后贪心依次将第 $i$ 小的元素分配给第 $i$ 个位置即可。
+> 无额外约束时满足条件的 $n$ 元集合个数为 Catalan 数 $C_n$。
+
 <h2 id="4-数学与数论">4. 数学与数论</h2>
 
 ### 4.1 模运算
