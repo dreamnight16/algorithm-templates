@@ -437,6 +437,43 @@ struct HLD {
 - **线段树选择**：迭代版（2N 空间）常数远优于递归版（4N 空间），推荐 KACTL 风格。仅在需要懒标记/延迟下推的区间修改场景才用递归版。
 - **树状数组二分**：BIT 自带 `lower_bound`/`select` 功能（KACTL 和 jiangly 均有），O(log N) 找到前缀和位置，无需外部二分。
 
+### 懒删除堆（Lazy Deletion Heap）
+
+**English**: Lazy Deletion Heap | **Chinese**: 懒删除堆 / 延迟删除优先队列
+
+不立即从堆中删除过期条目，而是在 `pop()` 时跳过。适用于需要动态更新优先级的场景（Dijkstra、Belady 缓存等）。
+
+```cpp
+// ---- 懒删除堆（大根堆）----
+// push({priority, id})；更新优先级时直接 push 新值，旧值在 pop 时跳过
+priority_queue<pii> pq;
+vector<int> best(n, -1);      // best[id] = 当前有效优先级，-1 表示已删除
+
+auto push = [&](int id, int pri) { best[id] = pri; pq.push({pri, id}); };
+auto pop  = [&]() {
+    while (!pq.empty()) {
+        auto [pri, id] = pq.top();
+        if (best[id] == pri) break;  // 匹配 → 有效
+        pq.pop();                     // 不匹配 → 过期，跳过
+    }
+    return pq.top();
+};
+```
+
+```cpp
+// ---- 懒删除堆（小根堆 + 双参数去重）----
+// 适用于 next-occurrence 缓存场景：同时检查 cached[id] 和 next_use
+priority_queue<pii, vector<pii>, greater<pii>> pq;
+
+auto try_pop = [&]() {
+    while (!pq.empty()) {
+        auto [nxt, id] = pq.top();
+        if (cached[id] && next_use[id] == nxt) break;
+        pq.pop();
+    }
+};
+```
+
 ---
 
 <h2 id="2-基础数据结构">2. 基础数据结构 (Basic Data Structures)</h2>
@@ -10236,6 +10273,54 @@ Circle minCircle(vector<Point>& pts) {
 | 随机分治                  | 平面最近点对                   | $O(n)$ 期望                |
 | Pollard's Rho             | 大整数分解                     | $O(n^{1/4})$ 期望          |
 | Miller-Rabin              | 素数判定                       | $O(k \log^3 n)$            |
+
+### 9.13.6 Belady 最优缓存（未来最远淘汰）
+
+**English**: Belady's Optimal Cache (Furthest-in-Future) | **Chinese**: Belady 最优缓存 / 未来最远淘汰
+
+缓存容量 $k$，已知完整请求序列，每次缓存满时淘汰**未来最晚再次出现**的元素。
+离线最优——任意在线算法无法超越。常用于 Trie 缓存、页面置换等场景。
+
+```cpp
+// ---- Belady 最优缓存（离线，容量 k）----
+// req[0..m-1] 为请求序列，每个请求是元素的编号（0-indexed）
+// 返回最少缓存未命中次数
+// 复杂度 O(M log K)（堆操作）
+int belady(int k, const vi& req) {
+    int m = sz(req), misses = 0;
+    vector<vi> occ(m);  // 每种元素的所有出现位置（需预处理）
+    rep(i, 0, m) occ[req[i]].pb(i);
+
+    vi nxt_pos(m, m);   // nxt_pos[i] = 请求 i 对应元素的下一次出现位置
+    rep(i, 0, m) {
+        auto& v = occ[req[i]];
+        auto it = upper_bound(all(v), i);
+        nxt_pos[i] = (it == v.end() ? m : *it);
+    }
+
+    set<pii> cache;  // (下次出现位置, 请求下标)，按下次出现从大到小
+    vector<bool> in(m);
+    rep(i, 0, m) {
+        int x = req[i];
+        if (in[x]) {
+            cache.erase({nxt_pos[i], x});  // 更新下次出现时间
+        } else {
+            misses++;
+            if (sz(cache) == k) {
+                auto [far, evict] = *cache.rbegin();  // 最晚出现的
+                cache.erase({far, evict});
+                in[evict] = false;
+            }
+        }
+        cache.insert({nxt_pos[i], x});
+        in[x] = true;
+    }
+    return misses;
+}
+```
+
+> 证明思路：反证——若不淘汰最晚出现的元素 $y$ 而淘汰 $x$（$x$ 先出现），
+> 则可以在 $x$ 的首次出现处将 $x$ 替换为 $y$，得到不劣的解。
 
 ---
 
