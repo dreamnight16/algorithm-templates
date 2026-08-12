@@ -67,7 +67,7 @@
 
 ### 常用类型定义与工具 (Common Typedefs and Utilities)
 
-````cpp
+```cpp
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -96,9 +96,9 @@ using vvll = vector<vll>;
 const int INF = 1e9;        // 用于非加权/小权图（如 BFS 距离）
 const ll LINF = 1e18;       // 用于加权图最短路（Dijkstra 等），确保 > 最大可能路径和
 const int MOD = 1e9 + 7;    // 常用质数模数，也可用 998244353（NTT 友好）
+```
 
-
-### 精选核心模板（Verified from KACTL / jiangly）
+### 精选核心模板 (Verified from KACTL / jiangly)
 
 以下模板来自竞赛标杆实现（KACTL、jiangly），简洁且久经考验，建议优先选用。
 
@@ -123,7 +123,7 @@ struct UF {
         return true;
     }
 };
-````
+```
 
 #### 并查集 DSU —— jiangly 风格（显式 siz 数组）
 
@@ -6132,7 +6132,7 @@ vector<bool> game_dp(int N, const vector<int>& moves) {
 
 **English**: Group Knapsack | **Chinese**: 分组背包
 
-$N$ 组物品，每组最多选一个。先枚举容量（01 方向），再枚举组内物品。复杂度 $O(C\cdot\sum k_i)$。
+N 组物品，每组最多选一个。先枚举容量（01 方向），再枚举组内物品。复杂度 O(C * sum(k_i))。
 
 ```cpp
 int group_knapsack(const vector<vector<pair<int,int>>>& groups, int C) {
@@ -6149,7 +6149,7 @@ int group_knapsack(const vector<vector<pair<int,int>>>& groups, int C) {
 
 **English**: Generalized Item Merge | **Chinese**: 泛化物品合并
 
-两个泛化物品 $f,g$ 合并为 $h[j]=\max_{0\le k\le j}(f[k]+g[j-k])$。复杂度 $O(C^2)$。
+两个泛化物品 f,g 合并为 h[j] = max_{0<=k<=j}(f[k]+g[j-k])。复杂度 O(C^2)。
 
 ```cpp
 vector<int> merge_items(const vector<int>& a, const vector<int>& b, int C) {
@@ -10296,8 +10296,6 @@ int belady(int k, const vi& req) {
 
 > 证明思路：反证——若不淘汰最晚出现的元素 $y$ 而淘汰 $x$（$x$ 先出现），
 > 则可以在 $x$ 的首次出现处将 $x$ 替换为 $y$，得到不劣的解。
-
----
 
 # 附录
 
