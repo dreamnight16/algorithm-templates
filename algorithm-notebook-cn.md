@@ -97,6 +97,7 @@ const int INF = 1e9;        // 用于非加权/小权图（如 BFS 距离）
 const ll LINF = 1e18;       // 用于加权图最短路（Dijkstra 等），确保 > 最大可能路径和
 const int MOD = 1e9 + 7;    // 常用质数模数，也可用 998244353（NTT 友好）
 
+
 ### 精选核心模板（Verified from KACTL / jiangly）
 
 以下模板来自竞赛标杆实现（KACTL、jiangly），简洁且久经考验，建议优先选用。
@@ -6127,65 +6128,39 @@ vector<bool> game_dp(int N, const vector<int>& moves) {
     // len=2 时需检查 opt[l+1][r] 是否存在
 ```
 
----
+### 6.17 分组背包（Group Knapsack）
 
-## 6.17 综合例题
+**English**: Group Knapsack | **Chinese**: 分组背包
 
-### 6.17.1 分组背包
+$N$ 组物品，每组最多选一个。先枚举容量（01 方向），再枚举组内物品。复杂度 $O(C\cdot\sum k_i)$。
 
 ```cpp
-// N 组物品，每组最多选一个，容量 C
 int group_knapsack(const vector<vector<pair<int,int>>>& groups, int C) {
-    // groups[g] = vector of {weight, value}
     vector<int> dp(C + 1, 0);
-    for (auto& group : groups) {
-        for (int j = C; j >= 0; j--) {  // 01 模式：先容量
-            for (auto [w, v] : group) {
+    for (auto& group : groups)
+        for (int j = C; j >= 0; j--)
+            for (auto [w, v] : group)
                 if (j >= w) dp[j] = max(dp[j], dp[j - w] + v);
-            }
-        }
-    }
     return dp[C];
 }
 ```
 
-### 6.17.2 有依赖的背包
+### 6.18 泛化物品合并（Generalized Item Merge）
+
+**English**: Generalized Item Merge | **Chinese**: 泛化物品合并
+
+两个泛化物品 $f,g$ 合并为 $h[j]=\max_{0\le k\le j}(f[k]+g[j-k])$。复杂度 $O(C^2)$。
 
 ```cpp
-// 树形依赖 + 分组思想
-// 把每个子树当作一组物品，可选 0/1/.../son_size 体积的方案
-// 详见 6.9 节
-```
-
-### 6.17.3 泛化物品合并
-
-```cpp
-// 两个泛化物品的合并（对每个容量 j，枚举分配给 a 的体积 k）
 vector<int> merge_items(const vector<int>& a, const vector<int>& b, int C) {
     vector<int> c(C + 1, -1e9);
-    for (int j = 0; j <= C; j++) {
-        for (int k = 0; k <= j; k++) {
+    for (int j = 0; j <= C; j++)
+        for (int k = 0; k <= j; k++)
             if (a[k] != -1e9 && b[j - k] != -1e9)
                 c[j] = max(c[j], a[k] + b[j - k]);
-        }
-    }
     return c;
 }
 ```
-
----
-
-## 6.18 总结
-
-1. **01 vs 完全背包**：内层循环方向是唯一的区别——递减保证物品只用一次，递增允许重复使用。
-2. **多重背包**：二进制拆分是竞赛中最实用的优化，单调队列优化在极端数据下有优势。
-3. **LIS O(N log N)**：记牢 `lower_bound`(严格) vs `upper_bound`(非递减)。
-4. **区间 DP**：外层枚举 `len`，内层枚举 `l`，最内层枚举 `k`。Knuth 优化可减少一层。
-5. **树形 DP + 换根**：第一遍自底向上求子树信息，第二遍自顶向下将父节点作为子树接入。
-6. **SOS DP**：`for i 0..k-1: for mask 0..(1<<k)-1: if mask>>i&1: dp[mask] += dp[mask^(1<<i)]`。
-7. **数位 DP**：memo key `(pos, tight, leadzero, ...)`，每组测试需重置。
-8. **斜率优化**：交叉乘用 `__int128` 防溢出；斜率/查询不单调时用 Li Chao 树。
-9. **四边形不等式**：分治/二分栈适用于 1D/1D；Knuth 适用于区间 DP。
 
 <h2 id="7-计算几何">7. 计算几何 (Computational Geometry)</h2>
 
@@ -10321,40 +10296,6 @@ int belady(int k, const vi& req) {
 
 > 证明思路：反证——若不淘汰最晚出现的元素 $y$ 而淘汰 $x$（$x$ 先出现），
 > 则可以在 $x$ 的首次出现处将 $x$ 替换为 $y$，得到不劣的解。
-
----
-
-## 9.14 综合例题
-
-### 例 1：树上路径第 k 小（强制在线）
-
-**题意：** $n$ 节点树，点有离散权值。$q$ 次询问 $u,v,k$ 求路径上第 $k$ 小的权值。强制在线，$n,q \le 10^5$。
-
-**解法：** 主席树 + LCA。在父节点基础上构建可持久化权值线段树。路径 $(u,v)$ 对应的信息为：
-
-$$tree(u) + tree(v) - tree(lca) - tree(fa[lca])$$
-
-查询时四个版本一起二分。
-
-### 例 2：动态图连通性（离线）
-
-**题意：** $n$ 个点的动态图，$m$ 次加/删边与询问连通性。
-
-**解法：** 线段树分治 + 可撤销并查集。将每条边的生效时间区间插入线段树，DFS 线段树并维护可撤销并查集。
-
-### 例 3：区间 Mex（多种离线做法）
-
-| 做法         | 复杂度                |
-| ------------ | --------------------- |
-| 莫队 + BIT   | $O(n\sqrt{n}\log n)$  |
-| 莫队 + 分块  | $O(n\sqrt{n})$        |
-| 主席树       | $O((n+q)\log n)$ 在线 |
-| 整体二分     | $O((n+q)\log n)$ 离线 |
-| 线段树上二分 | $O((n+q)\log n)$      |
-
----
-
-_本讲涵盖了竞赛中最常用的 13 种高级技巧，建议按照专题分别针对性刷题，掌握每种技巧的模板和变形。_
 
 ---
 
