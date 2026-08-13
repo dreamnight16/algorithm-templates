@@ -1594,141 +1594,7 @@ ll max_rectangle_histogram(const vi& heights) {
 }
 ```
 
-### 2.7 分块与莫队算法 (Sqrt Decomposition & Mo's Algorithm)
-
-通用技巧：将数组分成 sqrt(N) 块，块操作复杂度 O(sqrt(N))。
-
-```cpp
-// ---- 分块实现带单点修改的区间求和 ----
-struct SqrtDecomp {
-    int n, blk;
-    vi a;
-    vll block_sum;
-
-    SqrtDecomp(const vi& arr) : n(sz(arr)), a(arr) {
-        blk = max(1, (int)sqrt(n));
-        block_sum.assign((n + blk - 1) / blk, 0);
-        rep(i, 0, n) block_sum[i / blk] += a[i];
-    }
-
-    void point_update(int idx, int val) {
-        block_sum[idx / blk] += val - a[idx];
-        a[idx] = val;
-    }
-
-    ll range_query(int l, int r) {
-        ll ans = 0;
-        int bl = l / blk, br = r / blk;
-        if (bl == br) {
-            rep(i, l, r + 1) ans += a[i];
-        } else {
-            rep(i, l, (bl + 1) * blk) ans += a[i];
-            rep(b, bl + 1, br) ans += block_sum[b];
-            rep(i, br * blk, r + 1) ans += a[i];
-        }
-        return ans;
-    }
-};
-
-// ---- 莫队算法（普通莫队）----
-// 离线处理数组区间查询，O((N+Q) * sqrt(N))，适用于 N,Q ~ 1e5
-struct MoQuery {
-    int l, r, idx;
-};
-void mo_algorithm(vi& a, vector<MoQuery>& queries) {
-    int n = sz(a), q = sz(queries);
-    int blk = max(1, (int)(n / sqrt(q)));  // 希尔伯特序更优，见下方
-
-    sort(all(queries), [&](const MoQuery& x, const MoQuery& y) {
-        int bx = x.l / blk, by = y.l / blk;
-        if (bx != by) return bx < by;
-        return bx & 1 ? x.r > y.r : x.r < y.r;  // 奇偶优化
-        // 奇数块 r 降序，偶数块 r 升序
-    });
-
-    int cur_l = 0, cur_r = -1;
-    // 在此维护全局状态（如计数数组 freq、当前答案 ans）
-    // 对于每个查询:
-    //   while cur_l > q.l: add(--cur_l)
-    //   while cur_r < q.r: add(++cur_r)
-    //   while cur_l < q.l: remove(cur_l++)
-    //   while cur_r > q.r: remove(cur_r--)
-}
-
-// ---- 莫队算法（希尔伯特序优化）----
-// 希尔伯特曲线排序，常数优于普通分块排序，实测快 30%~50%
-inline int64_t hilbert_order(int x, int y, int pow, int rotate) {
-    if (pow == 0) return 0;
-    int hpow = 1 << (pow - 1);
-    int seg = (x < hpow) ? ((y < hpow) ? 0 : 3) : ((y < hpow) ? 1 : 2);
-    seg = (seg + rotate) & 3;
-    int nx = x & (x ^ hpow), ny = y & (y ^ hpow);
-    int nrot = (rotate + ((seg == 0 || seg == 3) ? 1 : 0)) & 3;
-    int64_t sub_square_size = 1LL << (2 * (pow - 1));
-    int64_t ans = seg * sub_square_size;
-    int64_t add = hilbert_order(nx, ny, pow - 1, nrot);
-    ans += (seg == 1 || seg == 2) ? add : (sub_square_size - add - 1);
-    return ans;
-}
-
-// ---- 具体 add / remove 示例：统计区间内不同元素个数 ----
-// 全局状态
-int distinct_cnt = 0;
-vi freq;  // 值域足够大时可用 map / 离散化
-
-void add(int pos, const vi& a) {
-    int val = a[pos];
-    if (freq[val] == 0) distinct_cnt++;
-    freq[val]++;
-}
-
-void remove(int pos, const vi& a) {
-    int val = a[pos];
-    freq[val]--;
-    if (freq[val] == 0) distinct_cnt--;
-}
-
-// 莫队主循环示例
-void solve_mo(vi& a, vector<MoQuery>& queries) {
-    int n = sz(a), q = sz(queries);
-    int K = max(1, (int)ceil(log2(n)));  // 希尔伯特序参数
-    int blk = max(1, (int)(n / sqrt(q)));
-
-    // 计算希尔伯特序
-    vector<int64_t> h_order(q);
-    rep(i, 0, q) h_order[i] = hilbert_order(queries[i].l, queries[i].r, K, 0);
-
-    vi order(q);
-    iota(all(order), 0);
-    sort(all(order), [&](int i, int j) { return h_order[i] < h_order[j]; });
-
-    // 初始化全局状态
-    int max_val = *max_element(all(a));
-    freq.assign(max_val + 1, 0);
-    distinct_cnt = 0;
-
-    int cur_l = 0, cur_r = -1;
-    vi ans(q);
-
-    for (int qi : order) {
-        auto [ql, qr, idx] = queries[qi];
-        while (cur_l > ql) add(--cur_l, a);
-        while (cur_r < qr) add(++cur_r, a);
-        while (cur_l < ql) remove(cur_l++, a);
-        while (cur_r > qr) remove(cur_r--, a);
-        ans[idx] = distinct_cnt;
-    }
-
-    // ans 中存储每个查询的结果
-}
-
-// ---- 带修改莫队 ----
-// 引入时间维度：(l/block, r/block, time)。块大小取 N^(2/3)
-// 复杂度 O(N^(5/3))。查询和修改交替出现。
-```
-
-### 2.8 字典树 (Trie / Prefix Tree)
-
+### 2.7 字典树 (Trie / Prefix Tree)
 插入和查找字符串均为 O(L)，其中 L 为字符串长度。支持前缀查询。
 
 ```cpp
@@ -1837,8 +1703,7 @@ struct BinaryTrie {
 };
 ```
 
-### 2.9 有序/无序集合的自定义策略 (Ordered / Hash Set with Custom Policy)
-
+### 2.8 有序/无序集合的自定义策略 (Ordered / Hash Set with Custom Policy)
 ```cpp
 // ---- 自定义哈希（用于 unordered 容器）----
 // 防止在 Codeforces 等平台上被反哈希攻击导致 TLE
@@ -1868,8 +1733,7 @@ struct custom_hash {
 // ordered_set.order_of_key(x) —— 严格小于 x 的元素个数
 ```
 
-### 2.10 笛卡尔树 (Cartesian Tree)
-
+### 2.9 笛卡尔树 (Cartesian Tree)
 **English**: Cartesian Tree | **Chinese**: 笛卡尔树
 
 数组 $a$ 的笛卡尔树：中序遍历为原下标序，且满足堆性质（如小根堆：节点值 $\le$ 子树值）。单调栈建树 O(N)。常用于 RMQ 转 LCA、构造最小生成树等。
@@ -1897,8 +1761,7 @@ vi cartesian_tree(const vi& a) {
 }
 ```
 
-### 2.11 可并堆 / 左偏树 (Leftist Heap / Mergeable Heap)
-
+### 2.10 可并堆 / 左偏树 (Leftist Heap / Mergeable Heap)
 **English**: Leftist Heap | **Chinese**: 左偏树 / 可并堆
 
 支持 `merge` 为 O(log N) 的堆，适合需要合并多个堆的场景（如树上启发式合并堆、k 短路）。基于 `dist`（到最近空孩子的距离）维护左偏性质。
@@ -1931,8 +1794,7 @@ struct LeftistHeap {
 };
 ```
 
-### 2.12 可持久化数组 (Persistent Array / Persistent Segment Tree)
-
+### 2.11 可持久化数组 (Persistent Array / Persistent Segment Tree)
 **English**: Persistent Array | **Chinese**: 可持久化数组 / 可持久化线段树
 
 支持单点修改并保留历史版本，每次修改 O(log N) 新增节点。是主席树、可持久化并查集、可持久化 Trie 的基础。
@@ -1983,8 +1845,7 @@ struct PersistentArray {
 };
 ```
 
-### 2.13 树套树（线段树套平衡树 / 树状数组套线段树）
-
+### 2.12 树套树（线段树套平衡树 / 树状数组套线段树）
 **English**: Tree-in-Tree (Segment Tree over Balanced BST) | **Chinese**: 树套树
 
 外层树维护区间，内层树维护该区间内的有序值。支持区间内排名、区间第 k 小、区间前驱后继等动态操作。
@@ -2029,8 +1890,7 @@ struct BITSegTree {
 };
 ```
 
-### 2.14 可持久化 Trie（Persistent Trie）
-
+### 2.13 可持久化 Trie（Persistent Trie）
 **English**: Persistent Trie | **Chinese**: 可持久化字典树
 
 支持保留历史版本的 Trie，常用于区间最大异或对、可持久化字符串匹配等。每次插入 O(log V) 新增路径。
@@ -2088,8 +1948,7 @@ struct PersistentTrie {
 };
 ```
 
-### 2.15 替罪羊树 (Scapegoat Tree)
-
+### 2.14 替罪羊树 (Scapegoat Tree)
 **English**: Scapegoat Tree | **Chinese**: 替罪羊树
 
 自平衡 BST，通过"重构"而非旋转维持平衡。插入/删除均摊 O(log N)，实现简单、常数小，支持按 rank 查询。
@@ -2495,123 +2354,7 @@ void floyd_with_path(vvll& dist, vvi& nxt, int n) {
 }
 ```
 
-### 3.6 并查集（Disjoint Set Union / Union-Find）
-
-**English**: DSU / Union-Find | **Chinese**: 并查集
-
-本节提供三种实现，按 compactness 从低到高排列。MST 等算法推荐使用版本 B（KACTL）或版本 A。
-
-```cpp
-// ---- A. 标准 DSU（路径压缩 + 按大小合并）----
-// 含组件计数，直观易懂
-struct DSU {
-    vi par, sz;
-    int comps;  // 连通分量数
-
-    DSU(int n) : par(n), sz(n, 1), comps(n) {
-        iota(all(par), 0);
-    }
-
-    int find(int x) {
-        return par[x] == x ? x : par[x] = find(par[x]);
-    }
-
-    // 合并成功返回 true，已在同一集合则返回 false
-    bool unite(int a, int b) {
-        a = find(a), b = find(b);
-        if (a == b) return false;
-        if (sz[a] < sz[b]) swap(a, b);
-        par[b] = a;
-        sz[a] += sz[b];
-        comps--;
-        return true;
-    }
-
-    bool same(int a, int b) { return find(a) == find(b); }
-    int size(int x) { return sz[find(x)]; }
-};
-
-// ---- B. KACTL 紧凑版 DSU（负数大小，极简代码）----
-// 竞赛推荐：代码最短，内存最优（仅一个 vector<int>）
-// e[i] < 0 表示 i 是根，-e[i] 为集合大小
-struct UF {
-    vi e;  // e[i] < 0: i 是根，-e[i] = 集合大小；e[i] >= 0: 指向父节点
-    UF(int n) : e(n, -1) {}
-
-    bool sameSet(int a, int b) { return find(a) == find(b); }
-    int size(int x) { return -e[find(x)]; }
-
-    int find(int x) {
-        return e[x] < 0 ? x : e[x] = find(e[x]);
-    }
-
-    bool join(int a, int b) {
-        a = find(a), b = find(b);
-        if (a == b) return false;
-        if (e[a] > e[b]) swap(a, b);  // e 为负数，更负的表示更大的集合
-        e[a] += e[b];                  // 合并大小（负数相加）
-        e[b] = a;
-        return true;
-    }
-};
-
-// ---- C. jiangly 风格 DSU（迭代 find，避免递归爆栈）----
-// find 使用 while 循环 + 路径压缩，不会因递归过深而爆栈
-struct DSU_Iterative {
-    vector<int> f, siz;
-    DSU_Iterative(int n) {
-        f.resize(n);
-        iota(f.begin(), f.end(), 0);
-        siz.assign(n, 1);
-    }
-    int find(int x) {
-        while (x != f[x]) x = f[x] = f[f[x]];
-        return x;
-    }
-    bool merge(int x, int y) {
-        x = find(x), y = find(y);
-        if (x == y) return false;
-        siz[x] += siz[y];
-        f[y] = x;
-        return true;
-    }
-    int size(int x) { return siz[find(x)]; }
-};
-
-// ---- DSU 可回滚版（可撤销并查集）----
-// 支持撤销最近一次合并。不能使用路径压缩（改用按秩合并）。
-struct DSU_Rollback {
-    vi par, rnk;
-    vector<pii> history;  // (节点, 旧父节点)；秩变更用负数编码
-    int comps;
-
-    DSU_Rollback(int n) : par(n), rnk(n, 0), comps(n) {
-        iota(all(par), 0);
-    }
-
-    int find(int x) {
-        while (par[x] != x) x = par[x];
-        return x;
-    }
-
-    bool unite(int a, int b) {
-        a = find(a), b = find(b);
-        if (a == b) return false;
-        if (rnk[a] < rnk[b]) swap(a, b);
-        history.eb(b, par[b]);
-        par[b] = a;
-        comps--;
-        if (rnk[a] == rnk[b]) {
-            history.eb(~a, rnk[a]);  // 用负数标记秩变更
-            rnk[a]++;
-        }
-        return true;
-    }
-};
-```
-
-### 3.7 Minimum Spanning Tree（最小生成树）
-
+### 3.6 Minimum Spanning Tree（最小生成树）
 **English**: Minimum Spanning Tree (Kruskal / Prim) | **Chinese**: 最小生成树（克鲁斯卡尔算法 / 普里姆算法）
 
 求连接所有节点的最小边权树。
@@ -2670,8 +2413,7 @@ ll prim(int n, const vector<vector<pii>>& adj) {
 // 需要在 MST 上做 LCA 与路径最大边权查询。
 ```
 
-### 3.8 Topological Sort & Kahn's Algorithm（拓扑排序）
-
+### 3.7 Topological Sort & Kahn's Algorithm（拓扑排序）
 **English**: Topological Sort | **Chinese**: 拓扑排序
 
 DAG 顶点的线性排序。复杂度 O(V+E)。
@@ -2721,8 +2463,7 @@ void dp_on_dag(int n, const vvi& adj) {
 }
 ```
 
-### 3.9 Strongly Connected Components（强连通分量）
-
+### 3.8 Strongly Connected Components（强连通分量）
 **English**: SCC (Tarjan / Kosaraju) | **Chinese**: 强连通分量
 
 将有向图分解为 SCC，复杂度 O(V+E)。缩点后的图（condensation DAG）是无环的。
@@ -2842,8 +2583,7 @@ struct SCC {
 
 **关键细节**：回边更新 `low[u]` 时必须用 `dfn[v]`（不是 `low[v]`）。原因：`low[v]` 可能来自 v 所在 SCC 的某个更早祖先，若错误地用 `low[v]` 更新，会导致跨 SCC 边也被纳入同一个 SCC，使 SCC 划分错误。
 
-### 3.10 Bridges & Articulation Points（桥与割点）
-
+### 3.9 Bridges & Articulation Points（桥与割点）
 **English**: Bridges & Articulation Points | **Chinese**: 桥 / 割点 / 无向图双连通分量
 
 在无向图中找出所有桥和割点。使用 DFS low-link 值，复杂度 O(V+E)。
@@ -2915,8 +2655,7 @@ struct FindArtPoints {
 };
 ```
 
-### 3.11 Lowest Common Ancestor（最近公共祖先）
-
+### 3.10 Lowest Common Ancestor（最近公共祖先）
 **English**: LCA (Binary Lifting) | **Chinese**: 最近公共祖先（倍增法）
 
 预处理 O(N log N)，每次 LCA 查询 O(log N)。同时支持 k 级祖先查询和路径最值查询。
@@ -3016,8 +2755,7 @@ struct LCA {
 // LCA(a,b) = 欧拉序列中 first[a] 到 first[b] 之间深度最小的节点
 ```
 
-### 3.12 Heavy-Light Decomposition（树链剖分 / 轻重链剖分）
-
+### 3.11 Heavy-Light Decomposition（树链剖分 / 轻重链剖分）
 **English**: Heavy-Light Decomposition (HLD) | **Chinese**: 树链剖分 / 轻重链剖分
 
 将树分解为重路径，支持路径查询与更新，复杂度 O(log^2 N)。通常配合线段树使用。
@@ -3240,8 +2978,7 @@ struct HLD_Comprehensive {
 - 版本 B 额外支持 jump、isAncestor、换根等高级操作
 - 配合 `SegTreeIter`（迭代线段树）可获得更快常数
 
-### 3.13 Euler Tour & Subtree Queries（欧拉序 / DFS 序）
-
+### 3.12 Euler Tour & Subtree Queries（欧拉序 / DFS 序）
 **English**: Euler Tour (Flattening Tree to Array) | **Chinese**: 欧拉序 / DFS 序
 
 把树映射到数组上，使得每个子树对应一个连续区间。O(N) 预处理。
@@ -3275,8 +3012,7 @@ struct EulerTour {
 // 子树更新/查询：在区间 [tin[u], tout[u]] 上用树状数组或线段树操作
 ```
 
-### 3.14 Bipartite Checking & Coloring（二分图检测与染色）
-
+### 3.13 Bipartite Checking & Coloring（二分图检测与染色）
 **English**: Bipartite Graph | **Chinese**: 二分图检测 / 二染色
 
 判断图是否为二分图（可二染色）。复杂度 O(V+E)。
@@ -3306,8 +3042,7 @@ vi bipartite_color(int n, const vvi& adj) {
 }
 ```
 
-### 3.15 Cycle Detection（环检测）
-
+### 3.14 Cycle Detection（环检测）
 **English**: Cycle Detection | **Chinese**: 环检测
 
 ```cpp
@@ -3337,8 +3072,7 @@ bool has_cycle_directed(int u, const vvi& adj, vi& state) {
 }
 ```
 
-### 3.16 Tree Diameter（树的直径）
-
+### 3.15 Tree Diameter（树的直径）
 **English**: Tree Diameter | **Chinese**: 树的直径
 
 ```cpp
@@ -3374,8 +3108,7 @@ int tree_diameter(const vvi& adj) {
 // 复杂度 O(N)
 ```
 
-### 3.17 Topological K-th Path / K 短路
-
+### 3.16 Topological K-th Path / K 短路
 **English**: K Shortest Paths | **Chinese**: K 短路
 
 对于非负权图，Dijkstra 变体为每个节点维护 K 条最优距离。
@@ -3411,8 +3144,7 @@ vll k_shortest_walks(int src, int dst, int k, int n, const vector<vector<pii>>& 
 }
 ```
 
-### 3.18 Virtual Tree（虚树）
-
+### 3.17 Virtual Tree（虚树）
 **English**: Virtual Tree | **Chinese**: 虚树
 
 从 K 个关键节点的子集构建辅助树（保留 LCA 关系）。虚树总节点数 O(K)。
@@ -3441,8 +3173,7 @@ vector<pii> build_virtual_tree(vi nodes, LCA& lca, EulerTour& et) {
 }
 ```
 
-### 3.19 2-SAT（2-SAT 问题）
-
+### 3.18 2-SAT（2-SAT 问题）
 **English**: 2-SAT | **Chinese**: 2-SAT 问题 / 二元可满足性问题
 
 判断布尔变量能否满足一个析取范式（CNF），其中每个子句恰含两个文字。复杂度 O(V+E)，通过 SCC 求解。
@@ -3519,8 +3250,7 @@ struct TwoSAT {
 - Floyd 已确认 k 循环在最外层（三重循环 k→i→j）
 - SCC 回边更新已确认使用 `dfn[y]`（非 `low[y]`），两版代码均正确
 
-### 3.20 Hall's Marriage Theorem（霍尔婚配定理）
-
+### 3.19 Hall's Marriage Theorem（霍尔婚配定理）
 **English**: Hall's Marriage Theorem | **Chinese**: 霍尔婚配定理 / 霍尔定理
 
 二分图 $G=(L\cup R,E)$ 存在覆盖 $L$ 的匹配，当且仅当对所有 $S\subseteq L$ 有 $|N(S)|\ge|S|$，
@@ -10223,130 +9953,8 @@ pushup(x);
 
 ---
 
-### 9.6 树链剖分 (Heavy-Light Decomposition, HLD)
-
-#### 9.6.1 问题引入
-
-给定一棵有根树，节点带权，支持：
-
-1. 路径 $u \to v$ 上点权加 $x$
-2. 路径 $u \to v$ 上点权和
-3. 子树加 $x$
-4. 子树求和
-
-$n,q \le 2\times10^5$，要求 $O(\log^2 n)$ 每次操作。
-
-#### 9.6.2 核心思想
-
-将树划分成若干重链（heavy path），每条重链的 DFS 序连续，可用线段树维护。跳链时每次跳到链顶，至多跳 $O(\log n)$ 条链。
-
-**两次 DFS：**
-
-1. DFS1: 计算 `sz[v]`（子树大小）、`son[v]`（重儿子）、`dep[v]`、`fa[v]`
-2. DFS2: 分配 DFS 序 `dfn`，`top[v]`（链顶）。优先走重儿子保证重链 DFS 序连续。
-
-#### 9.6.3 实现
-
-```cpp
-struct HLD {
-    int n, timer = 0;
-    vector<vector<int>> adj;
-    vector<int> fa, dep, sz, son, top, dfn, rnk;  // rnk[dfn] = 原节点
-    SegTree seg;  // 线段树
-
-    HLD(int _n, vector<vector<int>>& _adj, vector<int>& val) : n(_n), adj(_adj) {
-        fa.resize(n + 1); dep.resize(n + 1); sz.resize(n + 1);
-        son.resize(n + 1); top.resize(n + 1); dfn.resize(n + 1); rnk.resize(n + 1);
-        dfs1(1, 0);
-        dfs2(1, 1);
-        // 按 dfn 构建线段树
-        vector<int> arr(n + 1);
-        for (int i = 1; i <= n; i++) arr[dfn[i]] = val[i];
-        seg.build(arr, 1, 1, n);
-    }
-
-    void dfs1(int u, int f) {
-        fa[u] = f; dep[u] = dep[f] + 1; sz[u] = 1;
-        int mx = 0;
-        for (int v : adj[u]) {
-            if (v == f) continue;
-            dfs1(v, u);
-            sz[u] += sz[v];
-            if (sz[v] > mx) { mx = sz[v]; son[u] = v; }
-        }
-    }
-
-    void dfs2(int u, int tp) {
-        top[u] = tp; dfn[u] = ++timer; rnk[timer] = u;
-        if (son[u]) dfs2(son[u], tp);
-        for (int v : adj[u]) {
-            if (v != fa[u] && v != son[u]) dfs2(v, v);
-        }
-    }
-
-    // 路径 u-v 操作
-    void pathUpdate(int u, int v, int x) {
-        while (top[u] != top[v]) {
-            if (dep[top[u]] < dep[top[v]]) swap(u, v);
-            seg.update(dfn[top[u]], dfn[u], x);
-            u = fa[top[u]];
-        }
-        if (dep[u] > dep[v]) swap(u, v);
-        seg.update(dfn[u], dfn[v], x);
-    }
-
-    int pathQuery(int u, int v) {
-        int res = 0;
-        while (top[u] != top[v]) {
-            if (dep[top[u]] < dep[top[v]]) swap(u, v);
-            res += seg.query(dfn[top[u]], dfn[u]);
-            u = fa[top[u]];
-        }
-        if (dep[u] > dep[v]) swap(u, v);
-        res += seg.query(dfn[u], dfn[v]);
-        return res;
-    }
-
-    // 子树操作：dfn[u] 到 dfn[u] + sz[u] - 1
-    void subtreeUpdate(int u, int x) {
-        seg.update(dfn[u], dfn[u] + sz[u] - 1, x);
-    }
-    int subtreeQuery(int u) {
-        return seg.query(dfn[u], dfn[u] + sz[u] - 1);
-    }
-
-    // LCA
-    int lca(int u, int v) {
-        while (top[u] != top[v]) {
-            if (dep[top[u]] < dep[top[v]]) swap(u, v);
-            u = fa[top[u]];
-        }
-        return dep[u] < dep[v] ? u : v;
-    }
-};
-```
-
-#### 9.6.4 复杂度
-
-- 预处理 DFS：$O(n)$
-- 每次路径操作跳 $O(\log n)$ 条链，每条链线段树操作 $O(\log n)$
-- 总单次 $O(\log^2 n)$
-
-#### 9.6.5 扩展
-
-| 扩展           | 方法                                                       |
-| -------------- | ---------------------------------------------------------- |
-| 边权转点权     | 将边权下放到深度大的端点                                   |
-| LCA 祖先链二分 | 跳链 + 链上线段树二分                                      |
-| 动态换根       | 分类讨论 LCA 与当前根的关系                                |
-| 长链剖分       | 用于 $O(1)$ 求 $k$ 级祖先和 $O(n)$ 维护 DP（以深度为下标） |
-
----
-
-### 9.7 平衡树 (Balanced Binary Search Tree)
-
-#### 9.7.1 Treap (Tree + Heap)
-
+### 9.6 平衡树 (Balanced Binary Search Tree)
+#### 9.6.1 Treap (Tree + Heap)
 旋转 Treap，每个节点带随机优先级 `rnd`，通过左旋/右旋维护堆性质，期望深度 $O(\log n)$。
 
 ```cpp
@@ -10432,8 +10040,7 @@ struct Treap {
 };
 ```
 
-#### 9.7.2 FHQ Treap (无旋 Treap)
-
+#### 9.6.2 FHQ Treap (无旋 Treap)
 用 `split` 和 `merge` 替代旋转，代码更简洁，支持持久化。
 
 ```cpp
@@ -10525,8 +10132,7 @@ struct FHQTreap {
 };
 ```
 
-#### 9.7.3 Splay
-
+#### 9.6.3 Splay
 通过 `splay` 操作将刚访问的节点旋转到根，均摊 $O(\log n)$，支持区间反转（翻转）。
 
 ```cpp
@@ -10583,8 +10189,7 @@ struct Splay {
 };
 ```
 
-#### 9.7.4 对比
-
+#### 9.6.4 对比
 | 特性       | Treap            | FHQ Treap        | Splay            |
 | ---------- | ---------------- | ---------------- | ---------------- |
 | 实现难度   | 中               | 低               | 高               |
@@ -10596,14 +10201,11 @@ struct Splay {
 
 ---
 
-### 9.8 Bitset 优化
-
-#### 9.8.1 核心思想
-
+### 9.7 Bitset 优化
+#### 9.7.1 核心思想
 `std::bitset<N>` 一次可并行处理 $N=64$（或更大）个布尔值。当 $n \le 10^5$ 时，bitset 可将 $O(n^2)$ 压缩到 $O(n^2/64)$。
 
-#### 9.8.2 常见技巧
-
+#### 9.7.2 常见技巧
 ##### 传递闭包 (Transitive Closure)
 
 ```cpp
@@ -10668,8 +10270,7 @@ for (char c : t) ans = (ans << 1) & pos[c - 'a'];
 // ans.any() 表示存在
 ```
 
-#### 9.8.3 性能注意事项
-
+#### 9.7.3 性能注意事项
 - `bitset` 大小必须是编译期常量，可设为最大约束
 - `_Find_first()` / `_Find_next()` 是 GCC 扩展（使用 `__builtin_ctzll` 等）
 - 空间：`bitset<100000>` 约 12.5 KB，`bitset<N>` 数组 1000 行约 12.5 MB
@@ -10677,18 +10278,15 @@ for (char c : t) ans = (ans << 1) & pos[c - 'a'];
 
 ---
 
-### 9.9 分块 (Sqrt Decomposition)
-
-#### 9.9.1 核心思想
-
+### 9.8 分块 (Sqrt Decomposition)
+#### 9.8.1 核心思想
 将长度为 $n$ 的数组分成 $\sqrt{n}$ 块，每块大小 $\le \sqrt{n}$：
 
 - 整块操作：$O(\sqrt{n})$ 块，每块 $O(1)$
 - 零散操作：边界 $O(\sqrt{n})$ 个元素
 - 单次操作 $O(\sqrt{n})$
 
-#### 9.9.2 基础实现
-
+#### 9.8.2 基础实现
 ```cpp
 struct Block {
     int n, B;
@@ -10734,8 +10332,7 @@ struct Block {
 };
 ```
 
-#### 9.9.3 经典应用
-
+#### 9.8.3 经典应用
 | 问题                   | 分块思路                                         |
 | ---------------------- | ------------------------------------------------ |
 | 区间加 + 区间第 $k$ 小 | 块内维护排序数组，零散块重构 $O(\sqrt{n}\log n)$ |
@@ -10744,31 +10341,26 @@ struct Block {
 | 区间众数（在线）       | 预处理块间众数和前缀频率，$O(n\sqrt{n})$         |
 | 莫队                   | 基于分块的离线查询（见 9.1）                     |
 
-#### 9.9.4 块的大小选择
-
+#### 9.8.4 块的大小选择
 - 最经典：$B = \sqrt{n}$，平衡整块与零散
 - 重构代价大（如排序）：$B = \sqrt{n \log n}$
 - 仅整块查询、零散点修改：$B = \sqrt{q}$（询问驱动）
 
 ---
 
-### 9.10 虚树 (Virtual Tree)
-
-#### 9.10.1 问题引入
-
+### 9.9 虚树 (Virtual Tree)
+#### 9.9.1 问题引入
 给定一棵树，多次询问，每次给出 $k$ 个关键点（$\sum k \le 2\times10^5$）。需要在这些关键点之间进行 DP 或路径操作。
 
 建虚树：只保留关键点及其之间的 LCA，边为原树上缩链后的距离。虚树大小 $\le 2k-1$。
 
-#### 9.10.2 建树流程
-
+#### 9.9.2 建树流程
 1. 对关键点按 DFS 序排序
 2. 将相邻点（含首尾）的 LCA 加入关键点集合
 3. 去重，再按 DFS 序排序
 4. 用单调栈维护"最右链"，逐步建边
 
-#### 9.10.3 实现
-
+#### 9.9.3 实现
 ```cpp
 struct VirtualTree {
     int n, timer = 0;
@@ -10816,22 +10408,18 @@ struct VirtualTree {
 };
 ```
 
-#### 9.10.4 经典应用
-
+#### 9.9.4 经典应用
 - 多次询问树上关键点间的最小割 / 最大流
 - 树上关键点间的路径 DP（如消耗战 / 世界树）
 - 动态虚树：在原有虚树上增量建树
 
 ---
 
-### 9.11 三元环计数 (3-Cycle Counting)
-
-#### 9.11.1 问题
-
+### 9.10 三元环计数 (3-Cycle Counting)
+#### 9.10.1 问题
 给定 $n$ 个节点、$m$ 条边的无向简单图，统计三元环（三角形）数量。$n,m \le 2\times10^5$。
 
-#### 9.11.2 算法
-
+#### 9.10.2 算法
 重定向每条无向边：度数大的指向度数小的，度数相同时按编号。得到 DAG，每个节点出度 $\le \sqrt{m}$（因为若一个点出度 $> \sqrt{m}$，则其所有邻居度 $\ge$ 它，总度数至少 $\sqrt{m} \times \sqrt{m} = m$，矛盾）。
 
 算法：
@@ -10867,30 +10455,25 @@ long long count3Cycles(int n, vector<pair<int,int>>& edges) {
 }
 ```
 
-#### 9.11.3 复杂度分析
-
+#### 9.10.3 复杂度分析
 每条边在重定向后成为一条有向边。对于节点 $u$，内循环遍历其出边邻居 $v$ 的邻居 $w$，总 work 为 $\sum_u \sum_{v \in out(u)} out(v) = \sum_{(u,v)} out(v)$。
 
 每条有向边 $(u,v)$ 贡献 $out(v)$，其中 $out(v) \le \sqrt{m}$（若 $out(v) > \sqrt{m}$，则 $v$ 的度数更大，不会存在从度数大的点指向度数小的边被反向）。
 
 总复杂度 $O(m \sqrt{m})$。
 
-#### 9.11.4 扩展：四元环计数
-
+#### 9.10.4 扩展：四元环计数
 四元环（4-cycle 无弦）也可在 $O(m \sqrt{m})$ 内计数。思想类似：按度数排序后标记。
 
 ---
 
-### 9.12 Meet-in-the-Middle (折半搜索)
-
-#### 9.12.1 核心思想
-
+### 9.11 Meet-in-the-Middle (折半搜索)
+#### 9.11.1 核心思想
 当搜索空间指数级但可分割时，将问题拆成两半分别搜索，再在中间合并。
 
 典型复杂度：从 $O(2^n)$ 降至 $O(2^{n/2} \log 2^{n/2}) = O(2^{n/2} \cdot n)$。
 
-#### 9.12.2 经典问题
-
+#### 9.11.2 经典问题
 ##### 01 背包（n 小 W 大）
 
 $n \le 40$，容量 $W \le 10^9$，问最大价值。
@@ -10946,22 +10529,18 @@ int meetInMiddleKnapsack(int n, vector<int>& w, vector<int>& v, int maxW) {
 
 求 $n$ 个数中异或和为 $K$ 的子集个数。$n \le 40$。同样拆半，哈希表合并。
 
-#### 9.12.3 适用条件
-
+#### 9.11.3 适用条件
 - $n$ 较小（$\le 40 \sim 50$），指数暴力不可行
 - 问题可表示为每个元素"选/不选"的组合
 - 答案可合并（前半与后半独立，合并时能用排序/哈希/双指针处理）
 
 ---
 
-### 9.13 随机化技巧
-
-#### 9.13.1 核心思想
-
+### 9.12 随机化技巧
+#### 9.12.1 核心思想
 用随机数将确定性困难转化为高概率正确。常用于：哈希判断相等、随机打乱消除最坏情况、随机采样逼近答案。
 
-#### 9.13.2 随机哈希 (XorHash / Zobrist Hashing)
-
+#### 9.12.2 随机哈希 (XorHash / Zobrist Hashing)
 给每种可能的值分配一个随机 64 位整数，集合的哈希值为所有元素的异或和。判断两集合是否相等：比较哈希值，错误概率 $O(2^{-64})$。
 
 ```cpp
@@ -11043,8 +10622,7 @@ struct XorHash {
 
 常见用法：区间可重集判等、树上路径点/边集判等、排列检测、边区间覆盖（异或差分 + 随机哈希）、字符串多重集比较、图同构概率筛（WL 哈希）。
 
-#### 9.13.3 随机打乱 (Random Shuffle)
-
+#### 9.12.3 随机打乱 (Random Shuffle)
 消除输入顺序带来的最坏情况（快速排序的 pivot、Treap 的随机优先级等）。
 
 ```cpp
@@ -11060,8 +10638,7 @@ for (int T = 0; T < 100; T++) {
 }
 ```
 
-#### 9.13.4 随机采样 / 随机 pivot
-
+#### 9.12.4 随机采样 / 随机 pivot
 - 区间第 $k$ 小（随机 pivot 期望 $O(n)$）
 - 平面最近点对（随机分块期望 $O(n)$）
 - 最小圆覆盖：随机增量法，$O(n)$ 期望
@@ -11092,8 +10669,7 @@ Circle minCircle(vector<Point>& pts) {
 }
 ```
 
-#### 9.13.5 随机化算法总结
-
+#### 9.12.5 随机化算法总结
 | 技巧                      | 典型问题                       | 复杂度                     |
 | ------------------------- | ------------------------------ | -------------------------- |
 | XorHash                   | 可重集判等、区间 shuffle 检测  | $O(n)$ 预处理，$O(1)$ 查询 |
@@ -11105,8 +10681,7 @@ Circle minCircle(vector<Point>& pts) {
 | Pollard's Rho             | 大整数分解                     | $O(n^{1/4})$ 期望          |
 | Miller-Rabin              | 素数判定                       | $O(k \log^3 n)$            |
 
-#### 9.13.6 Belady 最优缓存（未来最远淘汰）
-
+#### 9.12.6 Belady 最优缓存（未来最远淘汰）
 **English**: Belady's Optimal Cache (Furthest-in-Future) | **Chinese**: Belady 最优缓存 / 未来最远淘汰
 
 缓存容量 $k$，已知完整请求序列，每次缓存满时淘汰**未来最晚再次出现**的元素。
@@ -11153,8 +10728,7 @@ int belady(int k, const vi& req) {
 > 证明思路：反证——若不淘汰最晚出现的元素 $y$ 而淘汰 $x$（$x$ 先出现），
 > 则可以在 $x$ 的首次出现处将 $x$ 替换为 $y$，得到不劣的解。
 
-#### 9.13.7 析合树（Divide-combine Tree）
-
+#### 9.12.7 析合树（Divide-combine Tree）
 **English**: Divide-combine Tree (析合树) | **Chinese**: 析合树
 
 表示排列所有「连续段」层级结构的树。连续段 = 区间 `[l,r]` 满足 $\max-\min=r-l$（值域也是连续区间）。
