@@ -497,6 +497,92 @@ auto try_pop = [&]() {
 };
 ```
 
+### 优化技巧（Optimization Techniques）
+
+**English**: Optimization Techniques | **Chinese**: 常数优化 / 卡常技巧
+
+竞赛中用于压常数、过大数据量题目的常用技巧。按使用频率排序。
+
+#### 1. 快读快写（Fast I/O with fread）
+
+```cpp
+// ---- 快读（fread 批量读入，比 cin/cout 快数倍）----
+// 适合大量整数输入的题目（如洛谷 5e5+ 数据）
+struct FastIO {
+    static const int SZ = 1 << 20;
+    char inbuf[SZ], outbuf[SZ];
+    int inpos, outpos;
+    FastIO() : inpos(0), outpos(0) {
+        fread(inbuf, 1, SZ, stdin);
+    }
+    inline char getc() {
+        if (inpos >= SZ) { inpos = 0; fread(inbuf, 1, SZ, stdin); }
+        return inbuf[inpos++];
+    }
+    template <typename T> inline void read(T& x) {
+        x = 0; char c = getc(); bool neg = false;
+        while (c < '0' || c > '9') { neg |= (c == '-'); c = getc(); }
+        while (c >= '0' && c <= '9') { x = x * 10 + (c - '0'); c = getc(); }
+        if (neg) x = -x;
+    }
+    inline void flush() { fwrite(outbuf, 1, outpos, stdout); outpos = 0; }
+    ~FastIO() { flush(); }
+};
+```
+
+#### 2. 编译优化指令（Pragma）
+
+```cpp
+// 放在文件开头（main 前），启用激进优化
+#pragma GCC optimize("O3", "unroll-loops")
+#pragma GCC target("avx2", "bmi", "bmi2", "popcnt", "lzcnt")
+// 或指定架构：
+#pragma GCC target("avx2,fma")
+```
+
+#### 3. Barrett 模乘（快速取模）
+
+```cpp
+// ---- Barrett Reduction：避免 % 运算（除法慢）----
+// 用于同一模数下大量乘法取模（如矩阵快速幂、组合数）
+struct Barrett {
+    ll m; unsigned long long im;
+    Barrett(ll mod) : m(mod), im((~0ULL) / mod + 1) {}
+    ll mod() const { return m; }
+    // 计算 a * b % m（a,b < m）
+    ll mul(ll a, ll b) const {
+        unsigned long long z = (unsigned long long)a * b;
+        unsigned long long x = (unsigned long long)(((unsigned __int128)z * im) >> 64);
+        unsigned long long y = x * m;
+        return (z - y + m) % m;
+    }
+};
+```
+
+#### 4. unordered_map / unordered_set 加速
+
+```cpp
+// 预分配 + 调大 load_factor，避免反复 rehash
+unordered_map<int, int, custom_hash> mp;
+mp.reserve(1 << 20);
+mp.max_load_factor(0.7);
+```
+
+#### 5. 常用常数优化
+
+```cpp
+// inline 小函数 + 引用传参避免拷贝 + reserve 预分配
+inline int add(int a, int b) { return a + b; }
+void f(const vi& arr) { /* 传引用避免 O(N) 拷贝 */ }
+vi v; v.reserve(1e6);  // 预分配，减少 push_back 扩容
+
+// 数组化替代 vector 嵌套（内存连续，cache 友好）
+int dp[MAXN][MAXM];  // 优于 vector<vector<int>>
+
+// 循环变量用 register（现代编译器多已自动优化，可省略）
+// 位运算替代乘除 2 的幂：x << 1, x >> 1, x & 1
+```
+
 ---
 
 <h2 id="2-基础数据结构">2. 基础数据结构 (Basic Data Structures)</h2>
