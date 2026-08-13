@@ -98,6 +98,28 @@ const ll LINF = 1e18;       // 用于加权图最短路（Dijkstra 等），确�
 const int MOD = 1e9 + 7;    // 常用质数模数，也可用 998244353（NTT 友好）
 ```
 
+#### 离散化（Coordinate Compression）
+
+**English**: Coordinate Compression / Discretization | **Chinese**: 离散化 / 坐标压缩
+
+将大值域整数映射为 `[0, m)`，用于主席树、树状数组、扫描线等需要按值域开数组的场景。O(N log N)。
+
+```cpp
+// ---- 离散化 ----
+// 输入原始值 a，返回压缩后的数组（值映射到 [0, m)）
+// 同时返回逆映射 inv：inv[i] = 原始值
+vi compress(const vi& a, vi& inv) {
+    vi vals = a;
+    sort(all(vals));
+    vals.erase(unique(all(vals)), vals.end());
+    inv = vals;
+    vi res(sz(a));
+    rep(i, 0, sz(a))
+        res[i] = lower_bound(all(vals), a[i]) - vals.begin();
+    return res;
+}
+```
+
 ### 精选核心模板 (Verified from KACTL / jiangly)
 
 以下模板来自竞赛标杆实现（KACTL、jiangly），简洁且久经考验，建议优先选用。
@@ -675,6 +697,34 @@ struct FenwickRange {
     }
 
     T range_sum(int l, int r) { return prefix_sum(r) - prefix_sum(l - 1); }
+};
+
+// ---- 二维树状数组（2D Fenwick）----
+// 单点修改 + 矩形区域求和，均为 O(log N * log M)
+template <typename T>
+struct Fenwick2D {
+    int n, m;
+    vector<vector<T>> bit;
+    Fenwick2D(int n_, int m_) : n(n_), m(m_), bit(n + 1, vector<T>(m + 1)) {}
+
+    void add(int x, int y, T v) {
+        for (int i = x + 1; i <= n; i += i & -i)
+            for (int j = y + 1; j <= m; j += j & -j)
+                bit[i][j] += v;
+    }
+
+    T sum(int x, int y) {  // 前缀和 [0..x] x [0..y]
+        T s = 0;
+        for (int i = x + 1; i > 0; i -= i & -i)
+            for (int j = y + 1; j > 0; j -= j & -j)
+                s += bit[i][j];
+        return s;
+    }
+
+    // 矩形 (x1,y1)..(x2,y2) 闭区间求和
+    T rect_sum(int x1, int y1, int x2, int y2) {
+        return sum(x2, y2) - sum(x1 - 1, y2) - sum(x2, y1 - 1) + sum(x1 - 1, y1 - 1);
+    }
 };
 ```
 
@@ -1323,6 +1373,69 @@ struct custom_hash {
 // ordered_set.order_of_key(x) —— 严格小于 x 的元素个数
 ```
 
+### 2.10 笛卡尔树 (Cartesian Tree)
+
+**English**: Cartesian Tree | **Chinese**: 笛卡尔树
+
+数组 $a$ 的笛卡尔树：中序遍历为原下标序，且满足堆性质（如小根堆：节点值 $\le$ 子树值）。单调栈建树 O(N)。常用于 RMQ 转 LCA、构造最小生成树等。
+
+```cpp
+// ---- 笛卡尔树（小根堆 on 值，BST on 下标）----
+// 返回每个节点的父节点（根的父亲为 -1）
+// a[i] 为原数组值；建树 O(N)
+vi cartesian_tree(const vi& a) {
+    int n = sz(a);
+    vi parent(n, -1);
+    vi stk;  // 单调栈，维护从栈底到栈顶递减的"右链"
+    rep(i, 0, n) {
+        int last = -1;
+        // 弹出值更大的节点，它们成为当前节点的左子树
+        while (!stk.empty() && a[stk.back()] > a[i]) {
+            last = stk.back();
+            stk.pop_back();
+        }
+        if (last != -1) parent[last] = i;
+        if (!stk.empty()) parent[i] = stk.back();
+        stk.pb(i);
+    }
+    return parent;
+}
+```
+
+### 2.11 可并堆 / 左偏树 (Leftist Heap / Mergeable Heap)
+
+**English**: Leftist Heap | **Chinese**: 左偏树 / 可并堆
+
+支持 `merge` 为 O(log N) 的堆，适合需要合并多个堆的场景（如树上启发式合并堆、k 短路）。基于 `dist`（到最近空孩子的距离）维护左偏性质。
+
+```cpp
+// ---- 左偏树（大根堆，可并堆）----
+struct LeftistHeap {
+    struct Node { int l, r, dist; ll val; };
+    vector<Node> t;
+
+    LeftistHeap() { t.push_back({0, 0, -1, 0}); }  // 0 号哨兵节点
+
+    int newnode(ll v) { t.push_back({0, 0, 0, v}); return sz(t) - 1; }
+
+    // 合并两个堆（大根堆），返回合并后的根
+    int merge(int x, int y) {
+        if (!x || !y) return x | y;
+        if (t[x].val < t[y].val) swap(x, y);  // 大根堆；小根堆改 >
+        t[x].r = merge(t[x].r, y);
+        if (t[t[x].l].dist < t[t[x].r].dist) swap(t[x].l, t[x].r);
+        t[x].dist = t[t[x].r].dist + 1;
+        return x;
+    }
+
+    ll top(int x) { return t[x].val; }
+
+    int push(int root, ll v) { return merge(root, newnode(v)); }
+
+    int pop(int root) { return merge(t[root].l, t[root].r); }
+};
+```
+
 <h2 id="3-图论">3. 图论 (Graph Theory)</h2>
 
 ### 3.1 Graph Representation（图的存储）
@@ -1345,6 +1458,46 @@ struct EdgeList {
 
 // ---- 邻接矩阵（Adjacency Matrix）—— 用于 Floyd、稠密图 ----
 vvll mat;  // mat[i][j] = 边权；无边则为 INF；i==j 时为 0
+```
+
+#### 链式前向星（Chain Forward Star）
+
+**English**: Chain Forward Star | **Chinese**: 链式前向星 / 数组模拟邻接表
+
+用 `head` + `nxt` 数组模拟邻接表，内存连续、常数小，适合边数多或需要快速遍历的场景（如网络流 Dinic）。加边 O(1)，遍历 O(出度)。
+
+```cpp
+// ---- 链式前向星（带边权）----
+struct CFS {
+    struct E { int to, w, nxt; };
+    vector<E> e;
+    vi head;        // head[u] = 节点 u 的第一条出边编号
+    int tot;
+
+    CFS(int n, int m) : head(n, -1), tot(0) { e.reserve(m * 2); }
+
+    // 添加有向边 u -> v，权值 w
+    void add(int u, int v, int w) {
+        e.push_back({v, w, head[u]});
+        head[u] = tot++;
+    }
+    // 添加无向边
+    void add2(int u, int v, int w) { add(u, v, w); add(v, u, w); }
+
+    // 遍历 u 的所有出边
+    void for_each(int u, auto&& f) {
+        for (int i = head[u]; i != -1; i = e[i].nxt) f(e[i].to, e[i].w);
+    }
+};
+
+// ---- 简化版（无权/只存 to）----
+struct CFS2 {
+    vi head, to, nxt;
+    int tot = 0;
+    CFS2(int n, int m) : head(n, -1), to(m * 2), nxt(m * 2) {}
+    void add(int u, int v) { to[tot] = v; nxt[tot] = head[u]; head[u] = tot++; }
+};
+// 遍历：for (int i = head[u]; i != -1; i = nxt[i]) { int v = to[i]; ... }
 ```
 
 ### 3.2 DFS & BFS（深度优先搜索 / 广度优先搜索）
