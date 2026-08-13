@@ -1054,6 +1054,126 @@ struct SegTreeIter {
 };
 ```
 
+#### 仿射变换线段树（区间乘 + 区间加 + 区间求和）
+
+**English**: Affine Lazy Segment Tree | **Chinese**: 仿射变换线段树
+
+维护变换 $x \mapsto mul\cdot x + add$，懒标记复合遵循 $(a,b)\circ(c,d)=(ac, ad+b)$。
+
+```cpp
+struct AffineSeg {
+    int n;
+    vector<ll> sum, mul, add;  // 每个值 → mul*x + add
+
+    AffineSeg(const vector<ll>& a) : n(sz(a)) {
+        sum.assign(4 * n, 0); mul.assign(4 * n, 1); add.assign(4 * n, 0);
+        build(1, 0, n - 1, a);
+    }
+    void build(int o, int l, int r, const vector<ll>& a) {
+        if (l == r) { sum[o] = a[l]; return; }
+        int m = (l + r) >> 1;
+        build(o << 1, l, m, a);
+        build(o << 1 | 1, m + 1, r, a);
+        sum[o] = sum[o << 1] + sum[o << 1 | 1];
+    }
+    void apply(int o, int l, int r, ll m, ll c) {
+        sum[o] = m * sum[o] + c * (r - l + 1);
+        mul[o] = mul[o] * m;
+        add[o] = add[o] * m + c;   // (mul,add) 之后复合 (m,c)
+    }
+    void push(int o, int l, int r) {
+        if (mul[o] != 1 || add[o] != 0) {
+            int m = (l + r) >> 1;
+            apply(o << 1, l, m, mul[o], add[o]);
+            apply(o << 1 | 1, m + 1, r, mul[o], add[o]);
+            mul[o] = 1; add[o] = 0;
+        }
+    }
+    void update(int o, int l, int r, int L, int R, ll m, ll c) {
+        if (L <= l && r <= R) { apply(o, l, r, m, c); return; }
+        push(o, l, r);
+        int mid = (l + r) >> 1;
+        if (L <= mid) update(o << 1, l, mid, L, R, m, c);
+        if (R > mid)  update(o << 1 | 1, mid + 1, r, L, R, m, c);
+        sum[o] = sum[o << 1] + sum[o << 1 | 1];
+    }
+    ll query(int o, int l, int r, int L, int R) {
+        if (L <= l && r <= R) return sum[o];
+        push(o, l, r);
+        int mid = (l + r) >> 1;
+        ll res = 0;
+        if (L <= mid) res += query(o << 1, l, mid, L, R);
+        if (R > mid)  res += query(o << 1 | 1, mid + 1, r, L, R);
+        return res;
+    }
+    void update(int L, int R, ll m, ll c) { update(1, 0, n - 1, L, R, m, c); }
+    ll query(int L, int R) { return query(1, 0, n - 1, L, R); }
+};
+```
+
+#### 矩阵懒标记线段树（多量线性变换）
+
+**English**: Matrix Lazy Segment Tree | **Chinese**: 矩阵线段树
+
+状态含多个相互影响的量时，用矩阵表示变换：节点维护状态向量和，懒标记为矩阵 + 常数向量。
+如「每天 $a\mathrel{+}=b$ 且 $b\mathrel{+}=x$」对应 $\begin{bmatrix}a'\\b'\end{bmatrix}=\begin{bmatrix}1&1\\0&1\end{bmatrix}\begin{bmatrix}a\\b\end{bmatrix}$ 加常数。
+
+```cpp
+// ---- 矩阵线段树（维护 sumA, sumB；懒标记 = 2x2 矩阵 + 常数向量）----
+// 操作示例：apply_mat [[1,1],[0,1]] 实现 a += b；apply_add (0, x) 实现 b += x
+struct MatrixSeg {
+    using Mat = array<array<ll, 2>, 2>;
+    int n;
+    vector<array<ll, 2>> sum;   // {sumA, sumB}
+    vector<Mat> mul;            // 乘法矩阵懒标记
+    vector<array<ll, 2>> add;   // 加法常数向量懒标记
+
+    const Mat ID = {{{1, 0}, {0, 1}}};
+    const array<ll, 2> ZERO = {0, 0};
+
+    MatrixSeg(int n_) : n(n_) {
+        sum.assign(4 * n, ZERO);
+        mul.assign(4 * n, ID);
+        add.assign(4 * n, ZERO);
+    }
+
+    // 状态向量 s 经矩阵 m 变换再加常数 c
+    array<ll, 2> transform(const Mat& m, const array<ll, 2>& c, array<ll, 2> s, int len) {
+        return {
+            m[0][0] * s[0] + m[0][1] * s[1] + c[0] * len,
+            m[1][0] * s[0] + m[1][1] * s[1] + c[1] * len
+        };
+    }
+    Mat mat_mul(const Mat& a, const Mat& b) {
+        Mat r;
+        rep(i, 0, 2) rep(j, 0, 2) {
+            r[i][j] = 0;
+            rep(k, 0, 2) r[i][j] += a[i][k] * b[k][j];
+        }
+        return r;
+    }
+
+    void apply(int o, int l, int r, const Mat& m, const array<ll, 2>& c) {
+        sum[o] = transform(m, c, sum[o], r - l + 1);
+        // 复合：(m, c) 之后是 (mul, add) → 新 mul = m*mul, 新 add = m*add + c
+        array<ll, 2> nadd = {
+            m[0][0] * add[o][0] + m[0][1] * add[o][1] + c[0],
+            m[1][0] * add[o][0] + m[1][1] * add[o][1] + c[1]
+        };
+        add[o] = nadd;
+        mul[o] = mat_mul(m, mul[o]);
+    }
+
+    void push(int o, int l, int r) {
+        int m = (l + r) >> 1;
+        apply(o << 1, l, m, mul[o], add[o]);
+        apply(o << 1 | 1, m + 1, r, mul[o], add[o]);
+        mul[o] = ID; add[o] = ZERO;
+    }
+    // update/query 递归结构同 AffineSeg，省略（传入 Mat 和常数向量）
+};
+```
+
 ### 2.4 ST 表 (Sparse Table)
 
 静态区间最小值/最大值/gcd 查询 O(1)。建表 O(N log N)。不支持修改。
