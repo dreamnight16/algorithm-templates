@@ -2065,8 +2065,9 @@ struct CFS {
     // 添加无向边
     void add2(int u, int v, int w) { add(u, v, w); add(v, u, w); }
 
-    // 遍历 u 的所有出边
-    void for_each(int u, auto&& f) {
+    // 遍历 u 的所有出边（C++17 兼容的模板写法）
+    template <typename F>
+    void for_each(int u, F&& f) {
         for (int i = head[u]; i != -1; i = e[i].nxt) f(e[i].to, e[i].w);
     }
 };
@@ -10366,7 +10367,7 @@ struct VirtualTree {
     int n, timer = 0;
     vector<vector<int>> adj;
     vector<int> dfn, dep, fa, top, sz, son;
-    // 需要 HLD 预处理 LCA 和 DFS 序（参见 9.6 节）
+    // 需要 HLD 预处理 LCA 和 DFS 序（参见 3.11 节）
 
     // 建虚树：输入关键点列表，返回虚树的邻接表（父 -> 子，带边权）
     // 边权为原树上两点距离：dep[child] - dep[parent]
