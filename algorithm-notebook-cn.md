@@ -4206,383 +4206,13 @@ void harmonic_lemma(ll n) {
 }
 ```
 
-### 4.13 常用数据结构补充
-
-以下数据结构在组合计数、区间查询、动态连通性判断等数学问题中频繁出现，收录 KACTL 和 jiangly 两个经典实现作为参考。
-
-#### 4.13.1 并查集 (DSU / Disjoint Set Union)
-
-**KACTL 版本**：利用负数存储大小，代码极短。`find` 递归路径压缩；`join` 按大小合并。每组大小 = `-e[find(x)]`。
-
-```cpp
-// KACTL 并查集 —— 负数组缩写法
-struct UF {
-    vi e;
-    UF(int n) : e(n, -1) {}
-    bool sameSet(int a, int b) { return find(a) == find(b); }
-    int size(int x) { return -e[find(x)]; }
-    int find(int x) { return e[x] < 0 ? x : e[x] = find(e[x]); }
-    bool join(int a, int b) {
-        a = find(a); b = find(b);
-        if (a == b) return false;
-        if (e[a] > e[b]) swap(a, b);  // 负值：更小的 e[x] 表示更大的集合
-        e[a] += e[b]; e[b] = a;
-        return true;
-    }
-};
-```
-
-**jiangly 版本**：迭代式 `find`（安全避免递归爆栈），独立 `siz` 数组。`merge` 无需按大小合并即可直接使用。
-
-```cpp
-// jiangly 并查集 —— 迭代路径压缩
-struct DSU {
-    vector<int> f, siz;
-    DSU(int n) {
-        f.resize(n);
-        iota(f.begin(), f.end(), 0);
-        siz.assign(n, 1);
-    }
-    int find(int x) {
-        while (x != f[x])
-            x = f[x] = f[f[x]];  // 路径压缩
-        return x;
-    }
-    bool merge(int x, int y) {
-        x = find(x); y = find(y);
-        if (x == y) return false;
-        siz[x] += siz[y];
-        f[y] = x;
-        return true;
-    }
-    int size(int x) { return siz[find(x)]; }
-};
-```
-
-#### 4.13.2 树状数组 (Fenwick Tree)
-
-**KACTL 版本**：使用 `pos |= pos + 1` 的更新方式与 `pos &= pos - 1` 的前缀查询。内置 `lower_bound` 查询第一个前缀和 >= sum 的位置。
-
-```cpp
-// KACTL 树状数组 —— 带 lower_bound
-struct Fenwick {
-    vector<ll> s;
-    Fenwick(int n) : s(n) {}
-    // 单点增加：pos 从 0 开始
-    void add(int pos, ll dif) {
-        for (; pos < sz(s); pos |= pos + 1)
-            s[pos] += dif;
-    }
-    // 前缀和 [0, pos)
-    ll sum(int pos) {
-        ll res = 0;
-        for (; pos > 0; pos &= pos - 1)
-            res += s[pos - 1];
-        return res;
-    }
-    // 第一个前缀和 >= sum 的下标（0-indexed）；不存在时返回 -1
-    int lower_bound(ll sum) {
-        if (sum <= 0) return -1;
-        int pos = 0;
-        for (int pw = 1 << 25; pw; pw >>= 1)
-            if (pos + pw <= sz(s) && s[pos + pw - 1] < sum)
-                pos += pw, sum -= s[pos - 1];
-        return pos;
-    }
-};
-```
-
-**jiangly 版本**：模板化，使用标准 `i += i & -i` 索引。内置 `select(k)` 查找第 k 个（0-indexed）1 的位置。
-
-```cpp
-// jiangly 树状数组 —— 模板化，带 select/kth
-template<typename T>
-struct Fenwick {
-    int n;
-    vector<T> a;
-    Fenwick(int n_ = 0) { init(n_); }
-    void init(int n_) { n = n_; a.assign(n, T{}); }
-    // 下标从 0 开始
-    void add(int x, const T& v) {
-        for (int i = x + 1; i <= n; i += i & -i)
-            a[i - 1] = a[i - 1] + v;
-    }
-    T sum(int x) {  // 前缀和 [0, x)
-        T ans{};
-        for (int i = x; i > 0; i -= i & -i)
-            ans = ans + a[i - 1];
-        return ans;
-    }
-    T rangeSum(int l, int r) { return sum(r) - sum(l); }
-    // 第 k 个（0-indexed）1 的位置，即最小的 x 使得 sum(x) > k
-    int select(const T& k) {
-        int x = 0;
-        T cur{};
-        for (int i = 1 << __lg(n); i; i /= 2)
-            if (x + i <= n && cur + a[x + i - 1] <= k) {
-                x += i;
-                cur = cur + a[x - 1];
-            }
-        return x;
-    }
-};
-```
-
-#### 4.13.3 线段树 — KACTL 迭代式
-
-相比递归线段树，迭代版本常数更小、代码更短、无递归调用开销。2N 存储，半开区间 `[l, r)`。
-
-```cpp
-// KACTL 迭代式线段树（2N 存储，半开区间 [l, r)）
-struct SegTree {
-    typedef int T;
-    static constexpr T unit = INT_MIN;  // 单位元：max 用 -INF；sum 用 0；min 用 INF
-    T f(T a, T b) { return max(a, b); } // 结合函数，按需修改
-
-    vector<T> s;
-    int n;
-
-    SegTree(int n = 0, T def = unit) : s(2 * n, def), n(n) {}
-
-    // 单点赋值（非增量），索引从 0 开始
-    void update(int pos, T val) {
-        for (s[pos += n] = val; pos /= 2;)
-            s[pos] = f(s[pos * 2], s[pos * 2 + 1]);
-    }
-
-    // 区间查询 [l, r)，半开区间
-    T query(int l, int r) {
-        T ra = unit, rb = unit;
-        for (l += n, r += n; l < r; l /= 2, r /= 2) {
-            if (l & 1) ra = f(ra, s[l++]);
-            if (r & 1) rb = f(s[--r], rb);
-        }
-        return f(ra, rb);
-    }
-};
-```
-
-#### 4.13.4 强连通分量 — Tarjan 算法 (jiangly 版本)
-
-**关键修正**：回边（已访问但未出栈的节点）使用 `dfn[y]` 而非 `low[y]` 更新 `low[x]`，这是正确的 Tarjan 写法。
-
-```cpp
-// jiangly 强连通分量 —— Tarjan 算法（dfn[y] 用于回边更新）
-struct SCC {
-    int n;
-    vector<vector<int>> adj;
-    vector<int> stk, dfn, low, bel;
-    int cur, cnt;
-
-    SCC(int n) {
-        this->n = n;
-        adj.assign(n, {});
-        dfn.assign(n, -1);
-        low.resize(n);
-        bel.assign(n, -1);
-        cur = cnt = 0;
-    }
-
-    void addEdge(int u, int v) { adj[u].push_back(v); }
-
-    void dfs(int x) {
-        dfn[x] = low[x] = cur++;
-        stk.push_back(x);
-        for (auto y : adj[x]) {
-            if (dfn[y] == -1) {
-                dfs(y);
-                low[x] = min(low[x], low[y]);
-            } else if (bel[y] == -1) {
-                low[x] = min(low[x], dfn[y]);  // 注意：用 dfn[y] 而非 low[y]
-            }
-        }
-        if (dfn[x] == low[x]) {
-            int y;
-            do {
-                y = stk.back();
-                bel[y] = cnt;
-                stk.pop_back();
-            } while (y != x);
-            cnt++;
-        }
-    }
-
-    // 返回每个节点的 SCC 编号（从 0 开始，按拓扑逆序编号）
-    vector<int> work() {
-        for (int i = 0; i < n; i++)
-            if (dfn[i] == -1) dfs(i);
-        return bel;
-    }
-};
-```
-
-#### 4.13.5 重链剖分 (HLD) — jiangly 版本
-
-全面版 HLD，包含：`jump`（向上跳 k 步）、`isAncester`（祖先判定）、`rootedParent`（换根父节点）、`rootedSize`（换根子树大小）、`rootedLca`（换根 LCA）、`path`（路径查询）。
-
-```cpp
-// jiangly 重链剖分 —— 全面版（含 jump、isAncester、rootedParent、rootedLca）
-struct HLD {
-    int n;
-    vector<vector<int>> adj;
-    vector<int> parent, depth, sz, in, out, head, rev;
-    int cur;
-
-    HLD(int n) {
-        this->n = n;
-        adj.resize(n);
-        parent.resize(n);
-        depth.resize(n);
-        sz.resize(n);
-        in.resize(n);
-        out.resize(n);
-        head.resize(n);
-        rev.resize(n);
-        cur = 0;
-    }
-
-    void addEdge(int u, int v) {
-        adj[u].push_back(v);
-        adj[v].push_back(u);
-    }
-
-    // 第一遍 DFS：计算 parent、depth、子树大小，并将重儿子换到 adj[u][0]
-    void dfs1(int u, int p) {
-        parent[u] = p;
-        depth[u] = (p == -1 ? 0 : depth[p] + 1);
-        sz[u] = 1;
-        for (auto& v : adj[u]) {
-            if (v == p) continue;
-            dfs1(v, u);
-            sz[u] += sz[v];
-            if (adj[u][0] == p || sz[v] > sz[adj[u][0]])
-                swap(v, adj[u][0]);  // 重儿子放到首位
-        }
-    }
-
-    // 第二遍 DFS：分配 in/out、head、rev
-    void dfs2(int u, int p) {
-        in[u] = cur++;
-        rev[in[u]] = u;
-        for (auto v : adj[u]) {
-            if (v == p) continue;
-            head[v] = (v == adj[u][0] ? head[u] : v);
-            dfs2(v, u);
-        }
-        out[u] = cur;
-    }
-
-    void work(int root = 0) {
-        head[root] = root;
-        dfs1(root, -1);
-        dfs2(root, -1);
-    }
-
-    // 判断 u 是否是 v 的祖先（包含相等情况）
-    bool isAncester(int u, int v) {
-        return in[u] <= in[v] && in[v] < out[u];
-    }
-
-    // 从 u 沿树向上跳 k 步；k 太大时返回 -1
-    int jump(int u, int k) {
-        while (u != -1) {
-            int toHead = depth[u] - depth[head[u]];
-            if (k <= toHead) {
-                return rev[in[u] - k];
-            }
-            k -= toHead + 1;
-            u = parent[head[u]];
-        }
-        return -1;
-    }
-
-    // 在以 root 为根时 u 的父节点
-    int rootedParent(int root, int u) {
-        if (root == u) return -1;
-        if (!isAncester(u, root))
-            return parent[u];
-        return jump(root, depth[root] - depth[u] - 1);
-    }
-
-    // 在以 root 为根时 u 的子树大小
-    int rootedSize(int root, int u) {
-        if (root == u) return n;
-        if (!isAncester(u, root))
-            return sz[u];
-        int v = jump(root, depth[root] - depth[u] - 1);
-        return n - sz[v];
-    }
-
-    // 遍历 u→v 路径上的重链区间，调用 f(l, r) 处理 [l, r)（保证 l <= r）
-    template<typename F>
-    void path(int u, int v, F&& f) {
-        while (head[u] != head[v]) {
-            if (depth[head[u]] < depth[head[v]]) swap(u, v);
-            f(in[head[u]], in[u] + 1);
-            u = parent[head[u]];
-        }
-        if (depth[u] < depth[v]) swap(u, v);
-        f(in[v], in[u] + 1);
-    }
-
-    // LCA（最近公共祖先）
-    int lca(int u, int v) {
-        while (head[u] != head[v]) {
-            if (depth[head[u]] < depth[head[v]]) swap(u, v);
-            u = parent[head[u]];
-        }
-        return depth[u] < depth[v] ? u : v;
-    }
-
-    // 换根 LCA：rootedLca(root, a, b) = lca(a,b) ^ lca(b,root) ^ lca(root,a)
-    int rootedLca(int root, int a, int b) {
-        return lca(a, b) ^ lca(b, root) ^ lca(root, a);
-    }
-
-    // 两点间距离（按需求自行展开）
-    int dist(int u, int v) {
-        return depth[u] + depth[v] - 2 * depth[lca(u, v)];
-    }
-};
-```
-
-### 4.14 图论核心注意事项
-
-本节列出图论算法实现中的关键易错点，包含 Dijkstra、Floyd 常见陷阱。
-
-#### 4.14.1 Dijkstra INF 设置
-
-**重要**：对于带权图，`INF` 必须设置为 **`1e18`**（而非 `1e9`），因为边权可以累加到很大：
-
-```cpp
-const ll INF = 1e18;  // 足以容纳 10^5 条边各 10^9 权重的路径和
-```
-
-错误使用 `1e9` 会导致 `dist` 数组溢出为"假更新值"，使得松弛判断 `dist[v] > dist[u] + w` 产生误判。
-
-#### 4.14.2 Floyd 循环顺序
-
-Floyd-Warshall 算法中 **k 循环必须是最外层**：
-
-```cpp
-// 正确写法
-for (int k = 0; k < n; k++)          // 最外层 k
-    for (int i = 0; i < n; i++)
-        for (int j = 0; j < n; j++)
-            dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j]);
-
-// 注意：若将 k 放在内层，算法退化为错误的松弛顺序
-```
-
-原因：k 在最外层保证"使用前 k 个顶点的最短路径"这一阶段定义成立。将 k 放在内层会丢失部分中间顶点的路径更新。
-
-<h1 id="5-字符串算法">5. 字符串算法 (String Algorithms)</h1>
+<h2 id="5-字符串算法">5. 字符串算法 (String Algorithms)</h2>
 
 ---
 
-## 5.1 KMP 算法 (Knuth-Morris-Pratt)
+### 5.1 KMP 算法 (Knuth-Morris-Pratt)
 
-### 核心思想
+#### 核心思想
 
 KMP 算法利用模式串自身的对称性构造**前缀函数（prefix function / pi 数组）**，实现线性时间的单模式匹配。前缀函数 `pi[i]` 表示子串 `s[0..i]` 的最长真前缀（true prefix）同时是真后缀（true suffix）的长度。
 
@@ -4590,7 +4220,7 @@ KMP 算法利用模式串自身的对称性构造**前缀函数（prefix functio
 
 ---
 
-### 5.1.1 前缀函数
+#### 5.1.1 前缀函数
 
 构造 `pi` 数组本身也是一个 KMP 匹配过程——用模式串的前缀匹配自己。
 
@@ -4621,7 +4251,7 @@ vector<int> getPi(const string &s) {
 }
 ```
 
-### 5.1.2 KMP 匹配
+#### 5.1.2 KMP 匹配
 
 用预处理好的 `pi` 数组在文本串中匹配模式串。
 
@@ -4654,7 +4284,7 @@ vector<int> kmp(const string &text, const string &pat) {
 }
 ```
 
-### 5.1.3 最小循环节
+#### 5.1.3 最小循环节
 
 利用 `pi` 数组可以 $O(n)$ 求出串的最小循环节长度：
 
@@ -4673,9 +4303,9 @@ int minCycleLen(const string &s) {
 
 ---
 
-## 5.2 Z 算法 (Z-Algorithm)
+### 5.2 Z 算法 (Z-Algorithm)
 
-### 核心思想
+#### 核心思想
 
 Z 函数 `z[i]` 表示字符串 `s` 与 `s[i..n-1]` （即以 `s[i]` 开头的后缀）的**最长公共前缀（LCP）** 长度。特别地，`z[0]` 通常定义为 0 或 n。
 
@@ -4690,7 +4320,7 @@ Z 函数 `z[i]` 表示字符串 `s` 与 `s[i..n-1]` （即以 `s[i]` 开头的�
 
 **空间复杂度**：$O(n)$。
 
-### 实现
+#### 实现
 
 ```cpp
 // Z 函数：维护 [l, r] 窗口
@@ -4720,7 +4350,7 @@ vector<int> zFunction(const string &s) {
 }
 ```
 
-### 应用：字符串匹配
+#### 应用：字符串匹配
 
 利用 Z 函数可以 $O(n+m)$ 完成模式匹配——将模式串拼接到文本串前，用分隔符隔开：
 
@@ -4744,9 +4374,9 @@ vector<int> zMatch(const string &text, const string &pat) {
 
 ---
 
-## 5.3 Manacher 算法（马拉车 / 最长回文子串）
+### 5.3 Manacher 算法（马拉车 / 最长回文子串）
 
-### 核心思想
+#### 核心思想
 
 Manacher 算法能在 $O(n)$ 时间内求出字符串每个位置为中心的**最长回文半径**。
 
@@ -4758,7 +4388,7 @@ Manacher 算法能在 $O(n)$ 时间内求出字符串每个位置为中心的**�
 
 **空间复杂度**：$O(n)$。
 
-### 实现
+#### 实现
 
 ```cpp
 // Manacher 算法：求每个位置的最长回文半径
@@ -4874,9 +4504,9 @@ vector<int> manacherEven(const string &s) {
 
 ---
 
-## 5.4 AC 自动机 (Aho-Corasick Automaton)
+### 5.4 AC 自动机 (Aho-Corasick Automaton)
 
-### 核心思想
+#### 核心思想
 
 AC 自动机是**多模式匹配**的经典算法，基于 Trie 树并引入**失配指针（fail link）** 和**输出指针（output/dict link）**。失配指针指向当前节点的最长真后缀所对应的节点。构建好后，只需对文本串扫描一遍即可找出所有模式串的出现位置。
 
@@ -4893,7 +4523,7 @@ AC 自动机是**多模式匹配**的经典算法，基于 Trie 树并引入**�
 - 构建：$O(\sum |pattern_i| \cdot |\Sigma|)$ 或 $O(\sum |pattern_i|)$（用 map 存转移）。
 - 匹配：$O(|text| + matches)$。
 
-### 实现（小写字母字符集）
+#### 实现（小写字母字符集）
 
 ```cpp
 struct AhoCorasick {
@@ -5015,7 +4645,7 @@ struct AhoCorasick {
 };
 ```
 
-### 通用字符集版本（使用 map）
+#### 通用字符集版本（使用 map）
 
 对于较大或不确定的字符集，使用 `map<char, int>` 存储转移边：
 
@@ -5082,9 +4712,9 @@ struct AhoCorasickMap {
 
 ---
 
-## 5.5 后缀数组 (Suffix Array)
+### 5.5 后缀数组 (Suffix Array)
 
-### 核心思想
+#### 核心思想
 
 后缀数组是处理字符串问题的强大工具。给定长度为 $n$ 的字符串 `s`：
 
@@ -5094,7 +4724,7 @@ struct AhoCorasickMap {
 
 本节使用**倍增法 + 基数排序**，复杂度为 $O(n \log n)$。Kasai 算法可在 $O(n)$ 内求出 `height` 数组。
 
-### 5.5.1 倍增法 + 基数排序（计数排序优化）
+#### 5.5.1 倍增法 + 基数排序（计数排序优化）
 
 **核心技巧**：每次倍增时用两次计数排序（先按第二关键字排，再按第一关键字排），保证单轮排序 $O(n)$。
 
@@ -5216,7 +4846,7 @@ struct SuffixArray {
 };
 ```
 
-### 5.5.2 LCP 查询（利用 height 数组 + RMQ）
+#### 5.5.2 LCP 查询（利用 height 数组 + RMQ）
 
 在求出 `height` 数组后，可以通过 RMQ (Sparse Table) 实现 $O(1)$ 查询任意两个后缀的 LCP：
 
@@ -5257,7 +4887,7 @@ struct LCPQuery {
 };
 ```
 
-### 5.5.3 应用
+#### 5.5.3 应用
 
 ```cpp
 // 最长公共子串（Longest Common Substring）
@@ -5296,9 +4926,9 @@ long long distinctSubstrings(const string &s) {
 
 ---
 
-## 5.6 字符串哈希 (Rolling Hash / String Hashing)
+### 5.6 字符串哈希 (Rolling Hash / String Hashing)
 
-### 核心思想
+#### 核心思想
 
 字符串哈希将任意字符串映射为整数，支持 $O(1)$ 查询任意子串的哈希值（滚动哈希）。常用于字符串匹配、最长公共前缀（二分 + 哈希）、回文判断等。
 
@@ -5313,7 +4943,7 @@ long long distinctSubstrings(const string &s) {
 - 子串哈希查询：$O(1)$。
 - 二分 LCP：$O(\log n)$。
 
-### 5.6.1 单哈希（64 位自然溢出）
+#### 5.6.1 单哈希（64 位自然溢出）
 
 ```cpp
 // 单哈希：使用 unsigned long long 自然溢出
@@ -5343,7 +4973,7 @@ struct SingleHash {
 };
 ```
 
-### 5.6.2 双哈希（推荐）
+#### 5.6.2 双哈希（推荐）
 
 ```cpp
 // 双哈希：使用两个大质数模数，安全可靠（推荐）
@@ -5385,7 +5015,7 @@ struct DoubleHash {
 };
 ```
 
-### 5.6.3 应用
+#### 5.6.3 应用
 
 ```cpp
 // 使用 DoubleHash 判断两个子串是否相等 O(1)
@@ -5424,9 +5054,9 @@ struct PalindromeHash {
 
 ---
 
-## 5.7 最小表示法 (Minimal Rotation / Booth's Algorithm)
+### 5.7 最小表示法 (Minimal Rotation / Booth's Algorithm)
 
-### 核心思想
+#### 核心思想
 
 最小表示法找出字符串所有循环同构串中字典序最小的那个，返回其起始位置。
 
@@ -5442,7 +5072,7 @@ struct PalindromeHash {
 
 **空间复杂度**：$O(1)$（仅需几个变量，不依赖输入长度）。
 
-### 实现
+#### 实现
 
 ```cpp
 // Booth 算法：求最小循环同构串的起始位置
@@ -5511,7 +5141,7 @@ int maximalRotation(const string &s) {
 }
 ```
 
-### 应用
+#### 应用
 
 - 判断两个串是否循环同构：比较它们的最小表示法结果。
 - 字符串去重（循环同构视为同一字符串）：将每个串转为最小表示法再存入 set。
@@ -5541,7 +5171,7 @@ vector<string> dedupCyclic(const vector<string> &words) {
 
 ---
 
-## 5.8 字符串算法复杂度总结
+### 5.8 字符串算法复杂度总结
 
 | 算法        | 预处理                        | 查询/匹配        | 空间                          | 用途               |
 | ----------- | ----------------------------- | ---------------- | ----------------------------- | ------------------ |
@@ -5553,7 +5183,7 @@ vector<string> dedupCyclic(const vector<string> &words) {
 | 字符串哈希  | $O(n)$                        | $O(1)$ / 子串    | $O(n)$                        | 子串判等、二分 LCP |
 | 最小表示法  | $O(n)$                        | --               | $O(1)$                        | 循环同构判等       |
 
-## 5.9 后缀自动机 (Suffix Automaton / SAM)
+### 5.9 后缀自动机 (Suffix Automaton / SAM)
 
 **English**: Suffix Automaton | **Chinese**: 后缀自动机
 
@@ -5617,7 +5247,7 @@ ll count_distinct_substr(const SAM& sam) {
 }
 ```
 
-## 5.10 回文树 (Palindromic Tree / Eertree)
+### 5.10 回文树 (Palindromic Tree / Eertree)
 
 **English**: Palindromic Tree / Eertree | **Chinese**: 回文树 / 回文自动机
 
@@ -5667,7 +5297,7 @@ struct Eertree {
 };
 ```
 
-## 5.11 广义后缀自动机 (Generalized SAM)
+### 5.11 广义后缀自动机 (Generalized SAM)
 
 **English**: Generalized Suffix Automaton | **Chinese**: 广义后缀自动机
 
@@ -5734,7 +5364,7 @@ struct GSAM {
 };
 ```
 
-## 5.12 后缀树 (Suffix Tree)
+### 5.12 后缀树 (Suffix Tree)
 
 **English**: Suffix Tree | **Chinese**: 后缀树
 
@@ -5820,11 +5450,11 @@ struct SuffixTree {
 > 说明：竞赛中后缀树常被 SAM / 后缀数组替代（更易实现且常数更小），
 > 后缀树主要在需要显式树形结构（如最长公共子串的广义后缀树）时使用。
 
-<h1 id="6-动态规划">6. 动态规划 (Dynamic Programming)</h1>
+<h2 id="6-动态规划">6. 动态规划 (Dynamic Programming)</h2>
 
-## 6.1 背包问题 (Knapsack Problems)
+### 6.1 背包问题 (Knapsack Problems)
 
-### 6.1.1 01 背包 — 每个物品最多选一次
+#### 6.1.1 01 背包 — 每个物品最多选一次
 
 **核心思想**：`dp[j]` 表示容量为 `j` 时能获得的最大价值。内层循环**从大到小**遍历，保证每个物品只被考虑一次。
 
@@ -5876,7 +5506,7 @@ int zero_one_ways(const vector<int>& w, int C) {
 
 ---
 
-### 6.1.2 完全背包 — 每个物品可以选无限次
+#### 6.1.2 完全背包 — 每个物品可以选无限次
 
 **核心思想**：内层循环**从小到大**遍历，允许同一物品被多次选择。
 
@@ -5928,7 +5558,7 @@ int unbounded_min_items(const vector<int>& w, int C) {
 
 ---
 
-### 6.1.3 多重背包 — 每个物品最多选 `cnt[i]` 次
+#### 6.1.3 多重背包 — 每个物品最多选 `cnt[i]` 次
 
 **二进制拆分优化**：将 `cnt[i]` 拆成 `1, 2, 4, ..., 2^k, r` 这 O(log cnt) 个物品，转化为 01 背包。
 
@@ -5997,7 +5627,7 @@ int bounded_knapsack_fast(const vector<int>& w, const vector<int>& v,
 
 ---
 
-## 6.2 混合背包
+### 6.2 混合背包
 
 将前三种背包合并，根据物品类型选择处理方式。
 
@@ -6039,7 +5669,7 @@ int mixed_knapsack(const vector<Item>& items, int C) {
 
 ---
 
-## 6.3 二维费用背包
+### 6.3 二维费用背包
 
 ```cpp
 // 每个物品同时消耗两种资源（如重量 w 和体积 b），价值为 v
@@ -6059,7 +5689,7 @@ int two_dim_knapsack(const vector<int>& w, const vector<int>& b,
 
 ---
 
-## 6.4 最长上升子序列 (LIS) — O(N log N)
+### 6.4 最长上升子序列 (LIS) — O(N log N)
 
 **核心**：维护 `tails` 数组，`tails[i]` 表示长度为 `i+1` 的上升子序列的最小末尾值。
 
@@ -6138,9 +5768,9 @@ int max_envelopes(vector<pair<int,int>>& e) {
 
 ---
 
-## 6.5 最长公共子序列 (LCS)
+### 6.5 最长公共子序列 (LCS)
 
-### 6.5.1 标准 O(N\*M) DP
+#### 6.5.1 标准 O(N\*M) DP
 
 ```cpp
 // 时间 O(N*M)，空间 O(N*M)
@@ -6159,7 +5789,7 @@ int lcs(const string& a, const string& b) {
 }
 ```
 
-### 6.5.2 滚动数组优化到 O(min(N,M))
+#### 6.5.2 滚动数组优化到 O(min(N,M))
 
 ```cpp
 // 空间 O(min(n, m))
@@ -6183,7 +5813,7 @@ int lcs_optimized(const string& a, const string& b) {
 }
 ```
 
-### 6.5.3 LCS 还原方案
+#### 6.5.3 LCS 还原方案
 
 ```cpp
 string lcs_reconstruct(const string& a, const string& b) {
@@ -6213,7 +5843,7 @@ string lcs_reconstruct(const string& a, const string& b) {
 }
 ```
 
-### 6.5.4 LCS 转 LIS（排列情况）
+#### 6.5.4 LCS 转 LIS（排列情况）
 
 当其中一个序列是排列（无重复元素）时，可 O(N log N)：
 
@@ -6233,7 +5863,7 @@ int lcs_permutation(const vector<int>& a, const vector<int>& b) {
 
 ---
 
-## 6.6 编辑距离 (Edit Distance)
+### 6.6 编辑距离 (Edit Distance)
 
 ```cpp
 int edit_distance(const string& s, const string& t) {
@@ -6260,7 +5890,7 @@ int edit_distance(const string& s, const string& t) {
 
 ---
 
-## 6.7 区间 DP (Interval DP)
+### 6.7 区间 DP (Interval DP)
 
 **通用模板**：从小到大枚举区间长度 `len`，再枚举左端点 `l`，右端点 `r = l + len - 1`，枚举分割点 `k`。
 
@@ -6354,9 +5984,9 @@ int matrix_chain(const vector<int>& dims) {
 
 ---
 
-## 6.8 树形 DP (Tree DP)
+### 6.8 树形 DP (Tree DP)
 
-### 6.8.1 基础树形 DP
+#### 6.8.1 基础树形 DP
 
 ```cpp
 // 例 1：树上最大独立集（没有上司的舞会）
@@ -6413,7 +6043,7 @@ void dfs_diameter(int u, int p) {
 }
 ```
 
-### 6.8.2 换根 DP (Rerooting DP)
+#### 6.8.2 换根 DP (Rerooting DP)
 
 **两次 DFS 模式**：第一次任选根求出向下信息，第二次将父节点贡献当子树接入子节点。
 
@@ -6530,7 +6160,7 @@ void reroot_dfs2(int u, int p) {
 
 ---
 
-## 6.9 背包问题在树上
+### 6.9 背包问题在树上
 
 ```cpp
 // 树形依赖背包：选子节点必须先选父节点
@@ -6561,9 +6191,9 @@ void dfs_tree_knapsack(int u, int p, int C) {
 
 ---
 
-## 6.10 状压 DP (Bitmask DP)
+### 6.10 状压 DP (Bitmask DP)
 
-### 6.10.1 基础枚举子集
+#### 6.10.1 基础枚举子集
 
 ```cpp
 // 枚举 mask 的所有非空子集
@@ -6584,7 +6214,7 @@ for (int sup = mask; sup < (1 << n); sup = (sup + 1) | mask) {
 }
 ```
 
-### 6.10.2 TSP (旅行商问题)
+#### 6.10.2 TSP (旅行商问题)
 
 ```cpp
 // TSP: dp[mask][i] = 当前在 i，已经访问过 mask 中的城市，的最短路径
@@ -6637,7 +6267,7 @@ int hamiltonian_path_count(int n, const vector<vector<bool>>& adj) {
 }
 ```
 
-### 6.10.3 SOS DP (子集 DP / Sum Over Subsets)
+#### 6.10.3 SOS DP (子集 DP / Sum Over Subsets)
 
 **核心应用**：快速计算所有子集 / 超集的聚合信息。
 
@@ -6736,7 +6366,7 @@ int max_and_of_subsets(const vector<int>& arr, int k) {
 }
 ```
 
-### 6.10.4 状压 DP — 枚举最后一组
+#### 6.10.4 状压 DP — 枚举最后一组
 
 ```cpp
 // 例：划分问题 — 将 n 个物品分成若干组，每组权值满足约束
@@ -6763,7 +6393,7 @@ for (int mask = 1; mask < (1 << n); mask++) {
 
 ---
 
-## 6.11 数位 DP (Digit DP)
+### 6.11 数位 DP (Digit DP)
 
 **核心**：记忆化搜索，memo key 通常为 `(pos, tight, leadzero, ...)`。
 
@@ -6871,9 +6501,9 @@ int stamp = 0;
 
 ---
 
-## 6.12 斜率优化 / 凸包优化 (Convex Hull Trick)
+### 6.12 斜率优化 / 凸包优化 (Convex Hull Trick)
 
-### 6.12.1 基础 CHT（Li Chao 树替代方案）
+#### 6.12.1 基础 CHT（Li Chao 树替代方案）
 
 **问题形式**：`dp[i] = min_{j<i} { dp[j] + f(j, i) }`，其中 `f(j, i)` 可写成 `m_j * x_i + c_j` 的形式。
 
@@ -6955,7 +6585,7 @@ long long seq_partition(const vector<long long>& a, long long C) {
 }
 ```
 
-### 6.12.2 Li Chao 线段树
+#### 6.12.2 Li Chao 线段树
 
 当斜率不单调时，用 Li Chao 树替代。
 
@@ -7018,7 +6648,7 @@ struct LiChaoTree {
 };
 ```
 
-### 6.12.3 交叉乘积防溢出
+#### 6.12.3 交叉乘积防溢出
 
 CHT 中判断交点时使用**交叉乘法**代替浮点数除法，避免精度问题和溢出：
 
@@ -7040,13 +6670,13 @@ bool is_bad(const Line& l1, const Line& l2, const Line& l3) {
 
 ---
 
-## 6.13 四边形不等式优化 (Divide and Conquer DP)
+### 6.13 四边形不等式优化 (Divide and Conquer DP)
 
 **问题形式**：`dp[i][j] = min_{k<j} { dp[i-1][k-1] + cost(k, j) }`，其中 `cost` 满足四边形不等式。
 
 **优化**：当 `opt[i][j-1] <= opt[i][j] <= opt[i+1][j]` 时，内层枚举 `k` 的范围被限定，总复杂度从 O(K _ N^2) 降到 O(K _ N)。
 
-### 6.13.1 分治优化 (Divide and Conquer DP)
+#### 6.13.1 分治优化 (Divide and Conquer DP)
 
 当 `dp[layer][j]` 只依赖 `dp[layer-1][...]`，且决策具有单调性时使用。
 
@@ -7088,7 +6718,7 @@ void solve_layered(int n, int K) {
 }
 ```
 
-### 6.13.2 Knuth 优化
+#### 6.13.2 Knuth 优化
 
 当 `cost` 同时满足四边形不等式和区间单调性时，`opt[l][r-1] <= opt[l][r] <= opt[l+1][r]`。
 
@@ -7121,7 +6751,7 @@ for (int len = 2; len <= n; len++) {
 }
 ```
 
-### 6.13.3 1D/1D 优化（单调队列 / 二分栈）
+#### 6.13.3 1D/1D 优化（单调队列 / 二分栈）
 
 ```cpp
 // dp[i] = min_{j<i} { dp[j] + cost(j, i) }
@@ -7170,7 +6800,7 @@ int get_opt(int i) {
 
 ---
 
-## 6.14 概率 DP / 期望 DP
+### 6.14 概率 DP / 期望 DP
 
 ```cpp
 // 期望 DP 通用思路：从终点倒推或列方程
@@ -7195,7 +6825,7 @@ double dice_expectation(int N) {
 
 ---
 
-## 6.15 博弈 DP
+### 6.15 博弈 DP
 
 ```cpp
 // 博弈 DP 通用模式
@@ -7222,9 +6852,9 @@ vector<bool> game_dp(int N, const vector<int>& moves) {
 
 ---
 
-## 6.16 DP 技巧一览
+### 6.16 DP 技巧一览
 
-### 6.16.1 状态设计常见思路
+#### 6.16.1 状态设计常见思路
 
 | 模式    | 示例问题         | 状态定义                    |
 | ------- | ---------------- | --------------------------- |
@@ -7236,7 +6866,7 @@ vector<bool> game_dp(int N, const vector<int>& moves) {
 | 数位 DP | 范围内计数       | `dp(pos, tight, ...)`       |
 | 期望 DP | 随机过程         | `dp[i]` 从 i 到终点的期望   |
 
-### 6.16.2 优化对照表
+#### 6.16.2 优化对照表
 
 | 优化方法       | 适用 DP 形式                                      | 复杂度降低                |
 | -------------- | ------------------------------------------------- | ------------------------- |
@@ -7248,7 +6878,7 @@ vector<bool> game_dp(int N, const vector<int>& moves) {
 | SOS DP         | 子集求和                                          | O(3^N) → O(N\*2^N)        |
 | 二进制拆分     | 多重背包                                          | O(C*Σcnt) → O(C*Σlog cnt) |
 
-### 6.16.3 常见调试错误
+#### 6.16.3 常见调试错误
 
 ```cpp
 // 1. 背包循环方向写反
@@ -7270,7 +6900,7 @@ vector<bool> game_dp(int N, const vector<int>& moves) {
     // len=2 时需检查 opt[l+1][r] 是否存在
 ```
 
-### 6.17 分组背包（Group Knapsack）
+#### 6.17 分组背包（Group Knapsack）
 
 **English**: Group Knapsack | **Chinese**: 分组背包
 
@@ -7287,7 +6917,7 @@ int group_knapsack(const vector<vector<pair<int,int>>>& groups, int C) {
 }
 ```
 
-### 6.18 泛化物品合并（Generalized Item Merge）
+#### 6.18 泛化物品合并（Generalized Item Merge）
 
 **English**: Generalized Item Merge | **Chinese**: 泛化物品合并
 
@@ -8632,19 +8262,19 @@ struct KDTree {
 };
 ```
 
-<h1 id="8-网络流">8 网络流</h1>
+<h2 id="8-网络流">8 网络流</h2>
 
 > **网络流**是图论中最庞大的模块之一，涵盖最大流、最小割、费用流、匹配等问题。在竞赛中，网络流题目往往难在建图而非算法本身——掌握常见建模技巧比背模板更重要。
 
 ---
 
-## 8.1 Dinic 最大流
+### 8.1 Dinic 最大流
 
 最大流问题：给定有向图 $G=(V,E)$，每条边 $(u,v)$ 有容量 $c(u,v)$，求从源点 $s$ 到汇点 $t$ 的最大流量。
 
 Dinic 算法是竞赛中最常用的最大流算法，核心思想是 **分层图 (level graph) + 阻塞流 (blocking flow) + 当前弧优化**。
 
-### 关键优化
+#### 关键优化
 
 | 优化             | 说明                                                                        |
 | ---------------- | --------------------------------------------------------------------------- |
@@ -8653,7 +8283,7 @@ Dinic 算法是竞赛中最常用的最大流算法，核心思想是 **分层�
 | **边对存储**     | 正向边和反向边相邻存储（`rev` 字段或 `tot^1` 技巧），保证 $O(1)$ 取反向边   |
 | **反边流量守恒** | 正向边 `flow += f`，反向边 `flow -= f`，始终满足 `fwd.flow + rev.flow == 0` |
 
-### 8.1.1 标准 Dinic（BFS + DFS + 当前弧优化，`rev` 字段版本）
+#### 8.1.1 标准 Dinic（BFS + DFS + 当前弧优化，`rev` 字段版本）
 
 - 使用 `rev` 字段保存每条边的反向边在邻接表中的下标
 - BFS 构建分层图：$level[v] = level[u] + 1$ 当 $(u,v)$ 有剩余容量
@@ -8761,7 +8391,7 @@ struct Dinic {
 };
 ```
 
-### 8.1.2 `tot^1` 成对存储版本
+#### 8.1.2 `tot^1` 成对存储版本
 
 另一种常用写法是将正向边和反向边存储在相邻位置（`edges[i]` 和 `edges[i^1]`），用 `tot` 作为全局边计数器。优点是不需要存储 `rev` 字段，代码更紧凑。
 
@@ -8836,7 +8466,7 @@ struct Dinic_TotTrick {
 };
 ```
 
-### 8.1.3 KACTL 缩放 Dinic（Scaling Dinic）
+#### 8.1.3 KACTL 缩放 Dinic（Scaling Dinic）
 
 KACTL 的 Dinic 额外引入 **容量缩放 (capacity scaling)**：从大到小枚举阈值 `lim`，每轮只考虑容量 $\ge$ `lim` 的边。这使得算法在遍历邻接表时可以提前跳过不够大的边，在大容量图上通常比标准 Dinic 更快。
 
@@ -8948,15 +8578,15 @@ struct DinicScaling {
 
 ---
 
-## 8.2 MCMF 最小费用最大流
+### 8.2 MCMF 最小费用最大流
 
 在最大流问题的每条边上附加一个单位费用 $w(u,v)$，求在流量最大的前提下总费用最小的流。也可以指定目标流量 $F$，求达到 $F$ 的最小费用。
 
-### 核心挑战
+#### 核心挑战
 
 费用流中最关键的问题是 **负权边**——如果用 SPFA 每次找最短增广路，最坏 $O(FVE)$，容易被卡。Johnson 势能法可以消除负权边，之后全部用 Dijkstra。
 
-### 算法流程
+#### 算法流程
 
 1. **势能初始化**：若图中有负权边，先用 **Bellman-Ford**（或 SPFA）跑一次初始化势能 `pot[v]`。若图无边权为负，势能全部初始化为 0。
 2. **修正边权**：每条边 $(u,v)$ 的修正费用为 $w'(u,v) = w(u,v) + pot[u] - pot[v] \ge 0$。
@@ -8965,11 +8595,11 @@ struct DinicScaling {
 5. **推流**：沿找到的最短增广路推送尽可能多的流量，累加原始费用。
 6. 重复步骤 3-5 直到无法增广（或达到目标流量）。
 
-### 复杂度
+#### 复杂度
 
 $O(F \cdot E \log V)$，$F$ 为最大流量。若要求特定流量 $K \le F$，则 $O(K \cdot E \log V)$。
 
-### 常见坑点
+#### 常见坑点
 
 - **反向边费用**：反向边的费用 $= -$ 正向边费用，保证撤销操作时费用正确。
 - **势能溢出**：用 `LLONG_MAX` 时注意 `pot[u] - pot[v]` 可能导致溢出——取 `pot` 为 `ll`，并确保差值不会超出范围（或改用 `__int128` 中间结果）。
@@ -9105,17 +8735,17 @@ struct MCMF {
 
 ---
 
-## 8.3 匈牙利算法（指派问题）
+### 8.3 匈牙利算法（指派问题）
 
 匈牙利算法求解二分图上的 **最优指派问题 (Assignment Problem)**：给定 $n \times n$ 的代价矩阵 $a_{ij}$，为每行分配一个不同的列，使得总代价最小（或最大）。
 
-### 适用场景
+#### 适用场景
 
 - $n \le 500$ 的稠密指派问题
 - 可以用最小费用最大流替代，但匈牙利的 $O(n^3)$ 常数极小
 - **不是** 无权二分图最大匹配（那用 Hopcroft-Karp 或 Dinic）
 
-### 关键技巧
+#### 关键技巧
 
 - **方阵化**：若行数不等于列数，补 0 边到 $\max(n, m) \times \max(n, m)$
 - **最大权转最小权**：求最大总代价时，将所有边权取负（$a_{ij} \gets -a_{ij}$）
@@ -9255,11 +8885,11 @@ struct Hungarian {
 
 ---
 
-## 8.4 Hopcroft-Karp 算法（二分图最大匹配）
+### 8.4 Hopcroft-Karp 算法（二分图最大匹配）
 
 Hopcroft-Karp (HK) 算法是 **无权二分图最大匹配**的最优选择，复杂度 $O(E\sqrt{V})$。比匈牙利 $O(VE)$ 更优，尤其适合稀疏的大规模二分图（$V \le 10^5$）。
 
-### 算法思想
+#### 算法思想
 
 与 Dinic 类似，HK 也使用分层 + 阻塞匹配的思路：
 
@@ -9386,7 +9016,7 @@ struct HopcroftKarp {
 };
 ```
 
-### 二分图匹配方案速查
+#### 二分图匹配方案速查
 
 | 问题             | 转化方式                                               |
 | ---------------- | ------------------------------------------------------ |
@@ -9399,9 +9029,9 @@ struct HopcroftKarp {
 
 ---
 
-## 8.5 最小割应用
+### 8.5 最小割应用
 
-### 8.5.1 最大权闭合子图 (Maximum Weight Closure)
+#### 8.5.1 最大权闭合子图 (Maximum Weight Closure)
 
 **问题**：给定有向图，每个点有权值 $w_i$（可正可负）。选出一个点集 $S$，满足闭合性（$\forall u \in S, (u \to v) \in E \implies v \in S$），且 $\sum_{i \in S} w_i$ 最大。
 
@@ -9462,7 +9092,7 @@ struct MaxWeightClosure {
 };
 ```
 
-### 8.5.2 最小路径覆盖（DAG 最小不相交路径覆盖）
+#### 8.5.2 最小路径覆盖（DAG 最小不相交路径覆盖）
 
 **问题**：在 DAG 中，用最少的路径覆盖所有顶点，路径之间互不相交。
 
@@ -9569,13 +9199,13 @@ struct MinPathCoverIntersecting {
 
 ---
 
-## 8.6 上下界网络流
+### 8.6 上下界网络流
 
-### 问题描述
+#### 问题描述
 
 每条边 $e$ 不仅有容量上界 $c(e)$，还有流量下界 $l(e)$，要求 $l(e) \le f(e) \le c(e)$。在此基础上求可行流 / 最大流 / 最小流。
 
-### 核心转化
+#### 核心转化
 
 对于每条边 $(u, v, l, r)$（下界 $l$，上界 $r$）：
 
@@ -9586,7 +9216,7 @@ struct MinPathCoverIntersecting {
 5. 若 $\text{balance}[i] < 0$，连边 $i \to T'$ 容量 $= -\text{balance}[i]$
 6. 在原 $s, t$ 处若有源汇，额外连 $t \to s$ 容量 $= \infty$
 
-### 三类问题解法
+#### 三类问题解法
 
 | 问题             | 步骤                                                                           |
 | ---------------- | ------------------------------------------------------------------------------ |
@@ -9716,7 +9346,7 @@ struct BoundedFlow {
 };
 ```
 
-### 8.6.1 上下界网络流 — 完整比赛模板
+#### 8.6.1 上下界网络流 — 完整比赛模板
 
 以下是一个可直接使用的完整实现，支持无源汇可行流和有源汇最大流。
 
@@ -9927,7 +9557,7 @@ struct BoundedFlowSimple {
 
 ---
 
-## 8.7 复杂度速查
+### 8.7 复杂度速查
 
 | 算法           | 复杂度            | 适用规模                   | 备注              |
 | -------------- | ----------------- | -------------------------- | ----------------- |
@@ -9941,9 +9571,9 @@ struct BoundedFlowSimple {
 
 ---
 
-## 8.8 常见建图技巧
+### 8.8 常见建图技巧
 
-### 拆点 (Node Splitting)
+#### 拆点 (Node Splitting)
 
 当需要限制**点的容量**时：
 
@@ -9951,14 +9581,14 @@ struct BoundedFlowSimple {
 - 连边 $i_{in} \to i_{out}$，容量 $=$ 点容量
 - 所有原入边连向 $i_{in}$，所有原出边从 $i_{out}$ 出发
 
-### 二分图 → 最大流
+#### 二分图 → 最大流
 
 - 源点 $s$ 连所有左部点，容量 $= 1$
 - 所有右部点连汇点 $t$，容量 $= 1$
 - 左右部之间的边容量 $= 1$
 - 最大流 $=$ 最大匹配
 
-### 棋盘染色
+#### 棋盘染色
 
 $n \times m$ 网格图上求最大独立集 / 最小覆盖：
 
@@ -9966,13 +9596,13 @@ $n \times m$ 网格图上求最大独立集 / 最小覆盖：
 - 冲突的格子之间连边
 - 转化最大匹配 / 最小割
 
-### 时间拆点
+#### 时间拆点
 
 分层图最短路/最大流，用于处理不同时间步的状态（例如每个时间步复制一份全图）。
 
 ---
 
-## 8.9 常见坑点
+### 8.9 常见坑点
 
 | 坑点               | 说明                                                                      |
 | ------------------ | ------------------------------------------------------------------------- |
@@ -9988,7 +9618,7 @@ $n \times m$ 网格图上求最大独立集 / 最小覆盖：
 
 ---
 
-## 8.10 调试清单
+### 8.10 调试清单
 
 - [ ] 用 $n \le 5$ 的小数据全枚举验证最大流/最小割答案
 - [ ] 打印残量网络：确认 `fwd.cap + rev.cap == 初始 cap`
@@ -10002,13 +9632,13 @@ $n \times m$ 网格图上求最大独立集 / 最小覆盖：
 
 > **参考文献**：KACTL (github.com/kth-competitive-programming/kactl)、OI-wiki (oi-wiki.org)、cp-algorithms (cp-algorithms.com)、AtCoder Library (ACL)
 
-<h1 id="9-高级技巧">9. 高级技巧 (Advanced Techniques)</h1>
+<h2 id="9-高级技巧">9. 高级技巧 (Advanced Techniques)</h2>
 
 ---
 
-## 9.1 莫队算法 (Mo's Algorithm)
+### 9.1 莫队算法 (Mo's Algorithm)
 
-### 9.1.1 问题引入
+#### 9.1.1 问题引入
 
 给定长度为 $n$ 的数组 $a[1..n]$，$q$ 次询问 $[l, r]$ 区间内不同数字的个数。
 
@@ -10016,7 +9646,7 @@ $n \times m$ 网格图上求最大独立集 / 最小覆盖：
 
 朴素做法：每次询问 $O(r-l+1)$ 扫描，总 $O(nq)$，不可接受。
 
-### 9.1.2 核心思想
+#### 9.1.2 核心思想
 
 莫队算法是离线处理区间查询的分块技巧。将询问按左端点分块，块内按右端点排序。维护双指针 $L,R$，相邻询问之间移动指针即可更新答案，均摊 $O((n+q)\sqrt{n})$。
 
@@ -10034,7 +9664,7 @@ sort(qs.begin(), qs.end(), [&](const Query& a, const Query& b) {
 });
 ```
 
-### 9.1.3 基础实现
+#### 9.1.3 基础实现
 
 ```cpp
 struct Mo {
@@ -10079,7 +9709,7 @@ struct Mo {
 };
 ```
 
-### 9.1.4 带修改莫队 (Mo with Updates)
+#### 9.1.4 带修改莫队 (Mo with Updates)
 
 允许单点修改，加入时间维：$(l, r, t)$。
 
@@ -10130,7 +9760,7 @@ struct MoWithUpdate {
 };
 ```
 
-### 9.1.5 希尔伯特序优化 (Hilbert Order)
+#### 9.1.5 希尔伯特序优化 (Hilbert Order)
 
 将区间 $[l,r]$ 映射到希尔伯特曲线（Hilbert curve）上的点，按该映射值排序可进一步降低指针移动总量。
 
@@ -10154,7 +9784,7 @@ long long hilbertOrder(int x, int y, int N) {
 
 实际使用中，取 $N$ 为大于 $n$ 的最小二次幂，按 `hilbertOrder(l, r, N)` 排序即可，常数优于普通莫队。
 
-### 9.1.6 复杂度与适用场景
+#### 9.1.6 复杂度与适用场景
 
 | 变种       | 复杂度             | 适用                       |
 | ---------- | ------------------ | -------------------------- |
@@ -10165,15 +9795,15 @@ long long hilbertOrder(int x, int y, int N) {
 
 ---
 
-## 9.2 CDQ 分治 (CDQ Divide and Conquer)
+### 9.2 CDQ 分治 (CDQ Divide and Conquer)
 
-### 9.2.1 问题引入
+#### 9.2.1 问题引入
 
 解决三维偏序问题：给定 $n$ 个三元组 $(a_i, b_i, c_i)$，对每个 $i$ 统计 $j \neq i$ 且 $a_j \le a_i, b_j \le b_i, c_j \le c_i$ 的数量。
 
 本质是离线处理带时间维的动态问题：把修改和查询看作事件，用分治排序时间维，BIT 维护值维。
 
-### 9.2.2 核心思想
+#### 9.2.2 核心思想
 
 将操作序列按时间（下标）分治：
 
@@ -10231,7 +9861,7 @@ void cdq(int l, int r, BIT& bit) {
 }
 ```
 
-### 9.2.3 应用场景
+#### 9.2.3 应用场景
 
 - 三维偏序 / 偏序计数
 - 离线动态凸包
@@ -10240,15 +9870,15 @@ void cdq(int l, int r, BIT& bit) {
 
 ---
 
-## 9.3 整体二分 (Parallel Binary Search)
+### 9.3 整体二分 (Parallel Binary Search)
 
-### 9.3.1 问题引入
+#### 9.3.1 问题引入
 
 区间第 $k$ 小（静态）：$n$ 个数的数组，$q$ 次询问 $[l,r]$ 中第 $k$ 小的值。
 
 主席树可 $O(n \log n)$ 解决，整体二分提供另一种思路，同样 $O((n+q) \log V)$。
 
-### 9.3.2 核心思想
+#### 9.3.2 核心思想
 
 二分答案域 $[L,R]$。将当前所有询问与修改放在一次扫描中：判定每个询问的答案在 $\le mid$ 还是 $> mid$，分别递归下去。
 
@@ -10289,7 +9919,7 @@ void solve(int L, int R, vector<Element>& elems, vector<Query>& qs, vector<int>&
 }
 ```
 
-### 9.3.3 带修改整体二分
+#### 9.3.3 带修改整体二分
 
 若数组允许单点修改，将修改视为"删除旧值 + 添加新值"两个事件。整体框架不变，只是元素集合随递归动态变化。
 
@@ -10323,7 +9953,7 @@ void solve(int L, int R, vector<Event>& evt, vector<int>& ans, BIT& bit) {
 }
 ```
 
-### 9.3.4 适用问题
+#### 9.3.4 适用问题
 
 整体二分将一类"多组询问，答案具有单调性"的问题统一在线性扫描中判定。典型问题：
 
@@ -10334,13 +9964,13 @@ void solve(int L, int R, vector<Event>& evt, vector<int>& ans, BIT& bit) {
 
 ---
 
-## 9.4 主席树 (Persistent Segment Tree)
+### 9.4 主席树 (Persistent Segment Tree)
 
-### 9.4.1 问题引入
+#### 9.4.1 问题引入
 
 静态区间第 $k$ 小：$n$ 个数的数组，$q$ 次询问 $[l,r]$ 第 $k$ 小。$n,q \le 2\times10^5$。
 
-### 9.4.2 核心思想
+#### 9.4.2 核心思想
 
 建 $n+1$ 棵权值线段树，第 $i$ 棵表示前缀 $[1,i]$ 中各值的出现次数（值域为离散化后的 $[1,m]$）。
 
@@ -10348,7 +9978,7 @@ void solve(int L, int R, vector<Event>& evt, vector<int>& ans, BIT& bit) {
 
 区间 $[l,r]$ 的第 $k$ 小：同时在 `root[l-1]` 和 `root[r]` 上二分，左儿子差值即为该值域在 $[l,r]$ 内的个数。
 
-### 9.4.3 实现
+#### 9.4.3 实现
 
 ```cpp
 struct SegNode {
@@ -10394,7 +10024,7 @@ for (int i = 1; i <= n; i++) {
 int ans = kth(roots[l-1], roots[r], 1, vals.size(), k);
 ```
 
-### 9.4.4 带修改主席树
+#### 9.4.4 带修改主席树
 
 对带修改的区间第 $k$ 小，需要主席树 + BIT（树状数组套主席树）：
 
@@ -10420,7 +10050,7 @@ int query(int l, int r, int k) {
 }
 ```
 
-### 9.4.5 变种
+#### 9.4.5 变种
 
 | 问题                | 做法                                                |
 | ------------------- | --------------------------------------------------- |
@@ -10431,9 +10061,9 @@ int query(int l, int r, int k) {
 
 ---
 
-## 9.5 Link-Cut Tree (LCT)
+### 9.5 Link-Cut Tree (LCT)
 
-### 9.5.1 问题引入
+#### 9.5.1 问题引入
 
 维护一个森林，支持：
 
@@ -10443,7 +10073,7 @@ int query(int l, int r, int k) {
 
 LCT 用 Splay 实现每个 Preferred Path，支持 $O(\log n)$ 均摊的上述操作。
 
-### 9.5.2 核心结构
+#### 9.5.2 核心结构
 
 - **Preferred Child**: 每个节点最多一个 preferred child
 - **Preferred Path**: 由 preferred edge 组成的路径，用一棵 Splay 维护（按深度排序）
@@ -10458,7 +10088,7 @@ LCT 用 Splay 实现每个 Preferred Path，支持 $O(\log n)$ 均摊的上述�
 - `cut(u,v)`: 删边
 - `split(u,v)`: 分离出 $u$ 到 $v$ 的路径
 
-### 9.5.3 实现
+#### 9.5.3 实现
 
 ```cpp
 struct LCT {
@@ -10569,7 +10199,7 @@ struct LCT {
 };
 ```
 
-### 9.5.4 路径维护模式
+#### 9.5.4 路径维护模式
 
 ```cpp
 // 查询 x 到 y 路径上的和
@@ -10584,7 +10214,7 @@ pushup(x);
 // 路径加（需要 lazytag，略）
 ```
 
-### 9.5.5 应用
+#### 9.5.5 应用
 
 - 动态树连通性（动态 MST）
 - 动态维护子树大小（须额外维护虚子树信息）
@@ -10593,9 +10223,9 @@ pushup(x);
 
 ---
 
-## 9.6 树链剖分 (Heavy-Light Decomposition, HLD)
+### 9.6 树链剖分 (Heavy-Light Decomposition, HLD)
 
-### 9.6.1 问题引入
+#### 9.6.1 问题引入
 
 给定一棵有根树，节点带权，支持：
 
@@ -10606,7 +10236,7 @@ pushup(x);
 
 $n,q \le 2\times10^5$，要求 $O(\log^2 n)$ 每次操作。
 
-### 9.6.2 核心思想
+#### 9.6.2 核心思想
 
 将树划分成若干重链（heavy path），每条重链的 DFS 序连续，可用线段树维护。跳链时每次跳到链顶，至多跳 $O(\log n)$ 条链。
 
@@ -10615,7 +10245,7 @@ $n,q \le 2\times10^5$，要求 $O(\log^2 n)$ 每次操作。
 1. DFS1: 计算 `sz[v]`（子树大小）、`son[v]`（重儿子）、`dep[v]`、`fa[v]`
 2. DFS2: 分配 DFS 序 `dfn`，`top[v]`（链顶）。优先走重儿子保证重链 DFS 序连续。
 
-### 9.6.3 实现
+#### 9.6.3 实现
 
 ```cpp
 struct HLD {
@@ -10696,13 +10326,13 @@ struct HLD {
 };
 ```
 
-### 9.6.4 复杂度
+#### 9.6.4 复杂度
 
 - 预处理 DFS：$O(n)$
 - 每次路径操作跳 $O(\log n)$ 条链，每条链线段树操作 $O(\log n)$
 - 总单次 $O(\log^2 n)$
 
-### 9.6.5 扩展
+#### 9.6.5 扩展
 
 | 扩展           | 方法                                                       |
 | -------------- | ---------------------------------------------------------- |
@@ -10713,9 +10343,9 @@ struct HLD {
 
 ---
 
-## 9.7 平衡树 (Balanced Binary Search Tree)
+### 9.7 平衡树 (Balanced Binary Search Tree)
 
-### 9.7.1 Treap (Tree + Heap)
+#### 9.7.1 Treap (Tree + Heap)
 
 旋转 Treap，每个节点带随机优先级 `rnd`，通过左旋/右旋维护堆性质，期望深度 $O(\log n)$。
 
@@ -10802,7 +10432,7 @@ struct Treap {
 };
 ```
 
-### 9.7.2 FHQ Treap (无旋 Treap)
+#### 9.7.2 FHQ Treap (无旋 Treap)
 
 用 `split` 和 `merge` 替代旋转，代码更简洁，支持持久化。
 
@@ -10895,7 +10525,7 @@ struct FHQTreap {
 };
 ```
 
-### 9.7.3 Splay
+#### 9.7.3 Splay
 
 通过 `splay` 操作将刚访问的节点旋转到根，均摊 $O(\log n)$，支持区间反转（翻转）。
 
@@ -10953,7 +10583,7 @@ struct Splay {
 };
 ```
 
-### 9.7.4 对比
+#### 9.7.4 对比
 
 | 特性       | Treap            | FHQ Treap        | Splay            |
 | ---------- | ---------------- | ---------------- | ---------------- |
@@ -10966,15 +10596,15 @@ struct Splay {
 
 ---
 
-## 9.8 Bitset 优化
+### 9.8 Bitset 优化
 
-### 9.8.1 核心思想
+#### 9.8.1 核心思想
 
 `std::bitset<N>` 一次可并行处理 $N=64$（或更大）个布尔值。当 $n \le 10^5$ 时，bitset 可将 $O(n^2)$ 压缩到 $O(n^2/64)$。
 
-### 9.8.2 常见技巧
+#### 9.8.2 常见技巧
 
-#### 传递闭包 (Transitive Closure)
+##### 传递闭包 (Transitive Closure)
 
 ```cpp
 // 有向图传递闭包 O(n^3 / 64)
@@ -10984,7 +10614,7 @@ for (int k = 1; k <= n; k++)
         if (reach[i][k]) reach[i] |= reach[k];
 ```
 
-#### 01 背包可行性
+##### 01 背包可行性
 
 ```cpp
 // n 个物品，判断能否凑出每个重量
@@ -10993,7 +10623,7 @@ dp[0] = 1;
 for (int i = 1; i <= n; i++) dp |= (dp << w[i]);  // O(nW/64)
 ```
 
-#### 多重背包二进制优化
+##### 多重背包二进制优化
 
 ```cpp
 // 每种物品有 cnt 个
@@ -11006,7 +10636,7 @@ for (int i = 1; i <= n; i++) {
 }
 ```
 
-#### 最短路 — 任意模数同余最短路
+##### 最短路 — 任意模数同余最短路
 
 对于 $n$ 个顶点的稠密图（$n \le 5000$），BFS 中维护 `bitset<N>` 表示"未访问"集合，用位运算加速邻接遍历：
 
@@ -11025,7 +10655,7 @@ while (!q.empty()) {
 }
 ```
 
-#### 字符串匹配 / 子序列检测
+##### 字符串匹配 / 子序列检测
 
 ```cpp
 // 对字符集构建位置矩阵 O(m * n / 64)
@@ -11038,7 +10668,7 @@ for (char c : t) ans = (ans << 1) & pos[c - 'a'];
 // ans.any() 表示存在
 ```
 
-### 9.8.3 性能注意事项
+#### 9.8.3 性能注意事项
 
 - `bitset` 大小必须是编译期常量，可设为最大约束
 - `_Find_first()` / `_Find_next()` 是 GCC 扩展（使用 `__builtin_ctzll` 等）
@@ -11047,9 +10677,9 @@ for (char c : t) ans = (ans << 1) & pos[c - 'a'];
 
 ---
 
-## 9.9 分块 (Sqrt Decomposition)
+### 9.9 分块 (Sqrt Decomposition)
 
-### 9.9.1 核心思想
+#### 9.9.1 核心思想
 
 将长度为 $n$ 的数组分成 $\sqrt{n}$ 块，每块大小 $\le \sqrt{n}$：
 
@@ -11057,7 +10687,7 @@ for (char c : t) ans = (ans << 1) & pos[c - 'a'];
 - 零散操作：边界 $O(\sqrt{n})$ 个元素
 - 单次操作 $O(\sqrt{n})$
 
-### 9.9.2 基础实现
+#### 9.9.2 基础实现
 
 ```cpp
 struct Block {
@@ -11104,7 +10734,7 @@ struct Block {
 };
 ```
 
-### 9.9.3 经典应用
+#### 9.9.3 经典应用
 
 | 问题                   | 分块思路                                         |
 | ---------------------- | ------------------------------------------------ |
@@ -11114,7 +10744,7 @@ struct Block {
 | 区间众数（在线）       | 预处理块间众数和前缀频率，$O(n\sqrt{n})$         |
 | 莫队                   | 基于分块的离线查询（见 9.1）                     |
 
-### 9.9.4 块的大小选择
+#### 9.9.4 块的大小选择
 
 - 最经典：$B = \sqrt{n}$，平衡整块与零散
 - 重构代价大（如排序）：$B = \sqrt{n \log n}$
@@ -11122,22 +10752,22 @@ struct Block {
 
 ---
 
-## 9.10 虚树 (Virtual Tree)
+### 9.10 虚树 (Virtual Tree)
 
-### 9.10.1 问题引入
+#### 9.10.1 问题引入
 
 给定一棵树，多次询问，每次给出 $k$ 个关键点（$\sum k \le 2\times10^5$）。需要在这些关键点之间进行 DP 或路径操作。
 
 建虚树：只保留关键点及其之间的 LCA，边为原树上缩链后的距离。虚树大小 $\le 2k-1$。
 
-### 9.10.2 建树流程
+#### 9.10.2 建树流程
 
 1. 对关键点按 DFS 序排序
 2. 将相邻点（含首尾）的 LCA 加入关键点集合
 3. 去重，再按 DFS 序排序
 4. 用单调栈维护"最右链"，逐步建边
 
-### 9.10.3 实现
+#### 9.10.3 实现
 
 ```cpp
 struct VirtualTree {
@@ -11186,7 +10816,7 @@ struct VirtualTree {
 };
 ```
 
-### 9.10.4 经典应用
+#### 9.10.4 经典应用
 
 - 多次询问树上关键点间的最小割 / 最大流
 - 树上关键点间的路径 DP（如消耗战 / 世界树）
@@ -11194,13 +10824,13 @@ struct VirtualTree {
 
 ---
 
-## 9.11 三元环计数 (3-Cycle Counting)
+### 9.11 三元环计数 (3-Cycle Counting)
 
-### 9.11.1 问题
+#### 9.11.1 问题
 
 给定 $n$ 个节点、$m$ 条边的无向简单图，统计三元环（三角形）数量。$n,m \le 2\times10^5$。
 
-### 9.11.2 算法
+#### 9.11.2 算法
 
 重定向每条无向边：度数大的指向度数小的，度数相同时按编号。得到 DAG，每个节点出度 $\le \sqrt{m}$（因为若一个点出度 $> \sqrt{m}$，则其所有邻居度 $\ge$ 它，总度数至少 $\sqrt{m} \times \sqrt{m} = m$，矛盾）。
 
@@ -11237,7 +10867,7 @@ long long count3Cycles(int n, vector<pair<int,int>>& edges) {
 }
 ```
 
-### 9.11.3 复杂度分析
+#### 9.11.3 复杂度分析
 
 每条边在重定向后成为一条有向边。对于节点 $u$，内循环遍历其出边邻居 $v$ 的邻居 $w$，总 work 为 $\sum_u \sum_{v \in out(u)} out(v) = \sum_{(u,v)} out(v)$。
 
@@ -11245,23 +10875,23 @@ long long count3Cycles(int n, vector<pair<int,int>>& edges) {
 
 总复杂度 $O(m \sqrt{m})$。
 
-### 9.11.4 扩展：四元环计数
+#### 9.11.4 扩展：四元环计数
 
 四元环（4-cycle 无弦）也可在 $O(m \sqrt{m})$ 内计数。思想类似：按度数排序后标记。
 
 ---
 
-## 9.12 Meet-in-the-Middle (折半搜索)
+### 9.12 Meet-in-the-Middle (折半搜索)
 
-### 9.12.1 核心思想
+#### 9.12.1 核心思想
 
 当搜索空间指数级但可分割时，将问题拆成两半分别搜索，再在中间合并。
 
 典型复杂度：从 $O(2^n)$ 降至 $O(2^{n/2} \log 2^{n/2}) = O(2^{n/2} \cdot n)$。
 
-### 9.12.2 经典问题
+#### 9.12.2 经典问题
 
-#### 01 背包（n 小 W 大）
+##### 01 背包（n 小 W 大）
 
 $n \le 40$，容量 $W \le 10^9$，问最大价值。
 
@@ -11308,15 +10938,15 @@ int meetInMiddleKnapsack(int n, vector<int>& w, vector<int>& v, int maxW) {
 }
 ```
 
-#### 方程解计数
+##### 方程解计数
 
 如 $a_1 x_1 + a_2 x_2 + \dots + a_n x_n = S$ 的解数（$x_i$ 有限制），拆分前后两半枚举。
 
-#### 子集异或和
+##### 子集异或和
 
 求 $n$ 个数中异或和为 $K$ 的子集个数。$n \le 40$。同样拆半，哈希表合并。
 
-### 9.12.3 适用条件
+#### 9.12.3 适用条件
 
 - $n$ 较小（$\le 40 \sim 50$），指数暴力不可行
 - 问题可表示为每个元素"选/不选"的组合
@@ -11324,13 +10954,13 @@ int meetInMiddleKnapsack(int n, vector<int>& w, vector<int>& v, int maxW) {
 
 ---
 
-## 9.13 随机化技巧
+### 9.13 随机化技巧
 
-### 9.13.1 核心思想
+#### 9.13.1 核心思想
 
 用随机数将确定性困难转化为高概率正确。常用于：哈希判断相等、随机打乱消除最坏情况、随机采样逼近答案。
 
-### 9.13.2 随机哈希 (XorHash / Zobrist Hashing)
+#### 9.13.2 随机哈希 (XorHash / Zobrist Hashing)
 
 给每种可能的值分配一个随机 64 位整数，集合的哈希值为所有元素的异或和。判断两集合是否相等：比较哈希值，错误概率 $O(2^{-64})$。
 
@@ -11370,7 +11000,7 @@ for (int i = 1; i <= n; i++) { cur ^= diff[i]; cur_hash[i] = cur; }
 // cur_hash[i] != 0 ⇔ 位置 i 被奇数条边覆盖（偶数条自动抵消）
 ```
 
-#### 双重哈希 (Double Hashing)
+##### 双重哈希 (Double Hashing)
 
 使用两组独立随机种子，碰撞概率从 $2^{-64}$ 降至 $2^{-128}$。
 
@@ -11389,7 +11019,7 @@ auto get_double_hash = [&](int val) -> DoubleHash {
 };
 ```
 
-#### XorHash 封装模板
+##### XorHash 封装模板
 
 ```cpp
 template <typename T = int>
@@ -11413,7 +11043,7 @@ struct XorHash {
 
 常见用法：区间可重集判等、树上路径点/边集判等、排列检测、边区间覆盖（异或差分 + 随机哈希）、字符串多重集比较、图同构概率筛（WL 哈希）。
 
-### 9.13.3 随机打乱 (Random Shuffle)
+#### 9.13.3 随机打乱 (Random Shuffle)
 
 消除输入顺序带来的最坏情况（快速排序的 pivot、Treap 的随机优先级等）。
 
@@ -11430,13 +11060,13 @@ for (int T = 0; T < 100; T++) {
 }
 ```
 
-### 9.13.4 随机采样 / 随机 pivot
+#### 9.13.4 随机采样 / 随机 pivot
 
 - 区间第 $k$ 小（随机 pivot 期望 $O(n)$）
 - 平面最近点对（随机分块期望 $O(n)$）
 - 最小圆覆盖：随机增量法，$O(n)$ 期望
 
-#### 最小圆覆盖（随机增量）
+##### 最小圆覆盖（随机增量）
 
 ```cpp
 struct Point { double x, y; };
@@ -11462,7 +11092,7 @@ Circle minCircle(vector<Point>& pts) {
 }
 ```
 
-### 9.13.5 随机化算法总结
+#### 9.13.5 随机化算法总结
 
 | 技巧                      | 典型问题                       | 复杂度                     |
 | ------------------------- | ------------------------------ | -------------------------- |
@@ -11475,7 +11105,7 @@ Circle minCircle(vector<Point>& pts) {
 | Pollard's Rho             | 大整数分解                     | $O(n^{1/4})$ 期望          |
 | Miller-Rabin              | 素数判定                       | $O(k \log^3 n)$            |
 
-### 9.13.6 Belady 最优缓存（未来最远淘汰）
+#### 9.13.6 Belady 最优缓存（未来最远淘汰）
 
 **English**: Belady's Optimal Cache (Furthest-in-Future) | **Chinese**: Belady 最优缓存 / 未来最远淘汰
 
@@ -11523,7 +11153,7 @@ int belady(int k, const vi& req) {
 > 证明思路：反证——若不淘汰最晚出现的元素 $y$ 而淘汰 $x$（$x$ 先出现），
 > 则可以在 $x$ 的首次出现处将 $x$ 替换为 $y$，得到不劣的解。
 
-### 9.13.7 析合树（Divide-combine Tree）
+#### 9.13.7 析合树（Divide-combine Tree）
 
 **English**: Divide-combine Tree (析合树) | **Chinese**: 析合树
 
@@ -11595,15 +11225,15 @@ struct SegmentTree {
 > 说明：析合树是近年较冷门的高级结构，主要用于「排列连续段」相关的特殊题目。
 > 关键性质：任意连续段都对应树上一个节点或相邻兄弟节点的并。
 
-# 附录
+<h2 id="附录">附录</h2>
 
 ---
 
-## 附录 A：常见错误与注意事项
+### 附录 A：常见错误与注意事项
 
 算法竞赛和刷题过程中，同类型的问题层出不穷。掌握以下常见陷阱，以在考场上避免从零调试的时间浪费。
 
-### A.1 整数溢出 (Integer Overflow)
+#### A.1 整数溢出 (Integer Overflow)
 
 **问题描述**
 在 C++ 中，两个 `int` 类型相乘时，中间结果也会以 `int` 类型存储，即使最终赋值给 `long long`，溢出已经发生。
@@ -11628,7 +11258,7 @@ long long cnt = 1LL * n * (n - 1) / 2;    // 所有乘法之前先转
 
 ---
 
-### A.2 取模负数的处理 (Negative Modulo)
+#### A.2 取模负数的处理 (Negative Modulo)
 
 **问题描述**
 C++ 中取模运算符 `%` 对于负数返回负余数，而非数学意义上的非负余数。这在涉及减法取模时极易出错。
@@ -11660,11 +11290,11 @@ res = (a - b + MOD) % MOD;  // 仅当 |a-b| < MOD 时安全
 
 ---
 
-### A.3 STL 常见陷阱
+#### A.3 STL 常见陷阱
 
 STL 虽然方便，但某些接口暗藏性能坑或语义坑。
 
-#### A.3.1 `set::upper_bound()` (成员函数) vs `std::upper_bound()` (自由函数)
+##### A.3.1 `set::upper_bound()` (成员函数) vs `std::upper_bound()` (自由函数)
 
 ```cpp
 set<int> st = {1, 3, 5, 7, 9};
@@ -11680,7 +11310,7 @@ auto it2 = std::upper_bound(st.begin(), st.end(), 5);
 
 **适用范围**：`set`、`map`、`multiset`、`multimap` 均适用此规则。
 
-#### A.3.2 `multiset::count()` 的复杂度
+##### A.3.2 `multiset::count()` 的复杂度
 
 ```cpp
 multiset<int> ms = {1, 1, 1, 2, 2, 3};
@@ -11691,7 +11321,7 @@ int c = ms.count(1);   // 如果 1 出现了 1e5 次，这就是 O(1e5)
 
 **替代方案**：若只想知道某个值是否存在，用 `ms.find(k) != ms.end()`；若要删除所有等于 k 的元素，用 `ms.erase(k)` 而非反复 `ms.erase(ms.find(k))`。
 
-#### A.3.3 `endl` vs `\n` 导致的 TLE
+##### A.3.3 `endl` vs `\n` 导致的 TLE
 
 ```cpp
 // 极其危险：endl 不仅换行，还会 flush 缓冲区，巨额 I/O 时直接 TLE
@@ -11714,7 +11344,7 @@ cin.tie(nullptr);
 
 ---
 
-### A.4 二分查找边界 (Binary Search Bounds)
+#### A.4 二分查找边界 (Binary Search Bounds)
 
 **问题描述**
 二分的三种经典写法边界不同，混淆会陷入死循环或漏解。
@@ -11763,7 +11393,7 @@ int mid = l + (r - l) / 2;
 
 ---
 
-### A.5 多测不清空 (Multi-test Clearing)
+#### A.5 多测不清空 (Multi-test Clearing)
 
 **问题描述**
 同一程序处理多个测试用例时，若未完全清空全局数据结构（vector、数组、邻接表、计数器），上一个用例的残留数据会污染当前用例，产生难以调试的错误。
@@ -11814,7 +11444,7 @@ void solve() {
 
 ---
 
-### A.6 浮点精度 (Floating-Point Precision)
+#### A.6 浮点精度 (Floating-Point Precision)
 
 **问题描述**
 浮点数在二进制表示中存在舍入误差，直接比较相等几乎永远失败。
@@ -11863,7 +11493,7 @@ for (int iter = 0; iter < 100; iter++) {
 
 ---
 
-### A.7 线段树空间 (Segment Tree Memory)
+#### A.7 线段树空间 (Segment Tree Memory)
 
 **问题描述**
 线段树所需数组大小经常被低算，导致 RE（数组越界）或 WA（数据被覆盖）。
@@ -11893,7 +11523,7 @@ int tree[MAXN * 4];   // 正确
 
 ---
 
-### A.8 图论中的 INF 取值
+#### A.8 图论中的 INF 取值
 
 **问题描述**
 最短路径算法（Dijkstra、Floyd 等）中若 INF 设置得太小，松弛时会溢出或被错误跳过；若太大，INF+边权可能溢出为负数。
@@ -11935,7 +11565,7 @@ const long long INF = 1e18;
 
 ---
 
-### A.9 并查集常见陷阱
+#### A.9 并查集常见陷阱
 
 **问题描述**
 错误地直接访问 `parent` 数组而非通过 `find()` 函数，导致路径压缩失效或得到过期父节点。
@@ -11977,7 +11607,7 @@ void unite(int u, int v) {
 
 ---
 
-### A.10 0/1 背包与完全背包的循环方向
+#### A.10 0/1 背包与完全背包的循环方向
 
 **问题描述**
 二者代码几乎完全相同，唯一区别在于内层循环的方向，写反即错且极易被忽略。
@@ -12011,7 +11641,7 @@ for (int i = 1; i <= n; i++) {
 
 ---
 
-### A.11 Floyd-Warshall 中 k 循环的顺序
+#### A.11 Floyd-Warshall 中 k 循环的顺序
 
 **问题描述**
 Floyd 算法的三重循环中，k 必须是**最外层循环**。一旦将 k 放到中层或内层，算法将错误地使用不完全的中间节点信息。
@@ -12042,7 +11672,7 @@ for (int i = 1; i <= n; i++)
 
 ---
 
-### A.12 线段树懒标记 (Lazy Propagation)
+#### A.12 线段树懒标记 (Lazy Propagation)
 
 **问题描述**
 在使用带有懒标记的线段树时，任何访问子节点（或对子节点操作）之前，必须先将当前节点的懒标记下推（push down）。否则子节点存储的值是过期的。
@@ -12095,7 +11725,7 @@ int query(int p, int l, int r, int ql, int qr) {
 
 ---
 
-### A.13 `map[]` vs `map::count()` / `map::find()`
+#### A.13 `map[]` vs `map::count()` / `map::find()`
 
 **问题描述**
 `map[key]` 有一个隐蔽的副作用：如果 key 不存在，它会**插入一个默认值**并与该 key 关联。这不仅改变了 map 的大小，还可能在遍历时引入垃圾数据。
@@ -12139,7 +11769,7 @@ if (mp.contains(key)) { ... }    // C++20, 语义更清晰
 
 ---
 
-### A.14 静态变量陷阱 (Static Variables in Recursion)
+#### A.14 静态变量陷阱 (Static Variables in Recursion)
 
 **问题描述**
 函数内声明的 `static` 局部变量在多次调用中共享同一实例。递归函数中使用 `static` 变量会导致第二次调用时保留了第一次的状态，产生难以追踪的错误。
@@ -12186,7 +11816,7 @@ void dfs(int u, int d) {
 
 ---
 
-### A.15 运算符优先级陷阱
+#### A.15 运算符优先级陷阱
 
 **问题描述**
 C++ 中部分运算符的优先级与直觉不符，省略括号会导致表达式被错误解析，且编译不报错。
@@ -12227,11 +11857,11 @@ int res = (a ? b : c) ? d : e;   // 按需加括号
 
 ---
 
-## 附录 B：来源与致谢
+### 附录 B：来源与致谢
 
 本模板库在整理过程中参考了大量社区开源资源与个人选手的模板仓库。感谢每一位贡献者的无私分享。
 
-### 主要参考项目
+#### 主要参考项目
 
 | 项目                             | 链接                                                                                                                                      | 协议         | 说明                                                                                         |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
@@ -12245,7 +11875,7 @@ int res = (a ? b : c) ? d : e;   // 按需加括号
 | **old-yan/CP-template**          | [github.com/old-yan/CP-template](https://github.com/old-yan/CP-template)                                                                  | —            | 结构清晰的中文竞赛模板，适合初学者参考                                                       |
 | **f_zyj ACM 模板**               | [github.com/snake-lvyonghao/ACM](https://github.com/snake-lvyonghao/ACM)                                                                  | —            | 经典 ACM 模板库，广泛流传于中文算法竞赛圈                                                    |
 
-### 其他辅助资源
+#### 其他辅助资源
 
 以下平台和工具在本模板的整理、测试与排版过程中提供了重要支持：
 
@@ -12258,7 +11888,7 @@ int res = (a ? b : c) ? d : e;   // 按需加括号
 - **GeoGebra** ([geogebra.org](https://geogebra.org)) — 计算几何的可视化与验证工具。
 - **Wolfram Alpha** ([wolframalpha.com](https://wolframalpha.com)) — 数学公式验证与化简。
 
-### 特别致谢
+#### 特别致谢
 
 感谢以下个人和组织对算法竞赛社区的持续贡献（排名不分先后）：
 
