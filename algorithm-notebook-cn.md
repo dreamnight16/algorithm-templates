@@ -1534,6 +1534,65 @@ struct BITSegTree {
 };
 ```
 
+### 2.14 可持久化 Trie（Persistent Trie）
+
+**English**: Persistent Trie | **Chinese**: 可持久化字典树
+
+支持保留历史版本的 Trie，常用于区间最大异或对、可持久化字符串匹配等。每次插入 O(log V) 新增路径。
+
+```cpp
+// ---- 可持久化 01-Trie（区间最大异或）----
+// 版本 roots[i] = 前 i 个数的 Trie；查询 [l,r] 与 x 异或最大
+struct PersistentTrie {
+    struct Node { int ch[2], cnt; };
+    vector<Node> t;
+    vi roots;
+    int maxbit;
+
+    PersistentTrie(int maxbit_) : maxbit(maxbit_) {
+        t.push_back({{0, 0}, 0});  // 0 号空节点
+        roots.pb(0);
+    }
+
+    // 基于前一版本 root 插入 val，返回新版本根
+    int insert(int root, int val) {
+        int nw = sz(t);
+        t.push_back(t[root]);
+        t[nw].cnt++;
+        int cur = nw;
+        per(bit, maxbit, 0) {
+            int b = (val >> bit) & 1;
+            int nxt = sz(t);
+            t.push_back(t[t[cur].ch[b]]);
+            t[nxt].cnt++;
+            t[cur].ch[b] = nxt;
+            cur = nxt;
+        }
+        return nw;
+    }
+
+    void add(int val) { roots.pb(insert(roots.back(), val)); }
+
+    // 在版本 [l, r]（前缀版本）中查询与 val 异或最大的结果
+    // 调用：query(roots[r], roots[l-1], val)
+    int query(int rroot, int lroot, int val) {
+        int ans = 0;
+        per(bit, maxbit, 0) {
+            int b = ((val >> bit) & 1) ^ 1;  // 贪心取相反位
+            if (t[t[rroot].ch[b]].cnt - t[t[lroot].ch[b]].cnt > 0) {
+                ans |= 1 << bit;
+                rroot = t[rroot].ch[b];
+                lroot = t[lroot].ch[b];
+            } else {
+                rroot = t[rroot].ch[b ^ 1];
+                lroot = t[lroot].ch[b ^ 1];
+            }
+        }
+        return ans;
+    }
+};
+```
+
 <h2 id="3-图论">3. 图论 (Graph Theory)</h2>
 
 ### 3.1 Graph Representation（图的存储）
@@ -4991,6 +5050,123 @@ ll count_distinct_substr(const SAM& sam) {
     rep(v, 1, sz(sam.st)) ans += sam.st[v].len - sam.st[sam.st[v].link].len;
     return ans;
 }
+```
+
+## 5.10 回文树 (Palindromic Tree / Eertree)
+
+**English**: Palindromic Tree / Eertree | **Chinese**: 回文树 / 回文自动机
+
+每个节点代表一个本质不同回文子串。支持在线构建 O(N)，求本质不同回文子串数、每个回文出现次数、以某位置结尾的最长回文等。
+
+```cpp
+// ---- 回文树（在线构建）----
+// 节点 0 = 偶根(len=0)，节点 1 = 奇根(len=-1)
+struct Eertree {
+    struct Node { int len, link; array<int, 26> nxt; };
+    vector<Node> t;
+    string s;
+    int last;
+
+    Eertree() {
+        t.push_back({0, 1, {}});  t[0].nxt.fill(0);   // 偶根
+        t.push_back({-1, 1, {}}); t[1].nxt.fill(0);   // 奇根
+        last = 0;
+    }
+
+    int get_link(int v) {
+        while (sz(s) - 1 - t[v].len - 1 < 0 ||
+               s[sz(s) - 1 - t[v].len - 1] != s.back())
+            v = t[v].link;
+        return v;
+    }
+
+    void extend(char ch) {
+        int c = ch - 'a';
+        s += ch;
+        int cur = get_link(last);
+        if (t[cur].nxt[c] == 0) {
+            int nw = sz(t);
+            t.push_back({t[cur].len + 2, 0, {}});
+            t[nw].nxt.fill(0);
+            t[nw].link = (t[nw].len == 1) ? 0 :
+                         t[get_link(t[cur].link)].nxt[c];
+            t[cur].nxt[c] = nw;
+        }
+        last = t[cur].nxt[c];
+    }
+
+    void build(const string& str) { for (char ch : str) extend(ch); }
+
+    // 本质不同回文子串数 = 节点数 - 2
+    int distinct_count() const { return sz(t) - 2; }
+};
+```
+
+## 5.11 广义后缀自动机 (Generalized SAM)
+
+**English**: Generalized Suffix Automaton | **Chinese**: 广义后缀自动机
+
+接受多个字符串所有子串的 SAM，用于多串的最长公共子串、多串本质不同子串等。在线插入多串，O(总长)。
+
+```cpp
+// ---- 广义后缀自动机（多字符串，在线）----
+// 对每个字符串调用 build(str)，内部复用已建节点
+struct GSAM {
+    struct State { int len, link; array<int, 26> nxt; };
+    vector<State> st;
+    int last;
+
+    GSAM() : st(1), last(0) {
+        st[0] = {0, -1, {}};
+        st[0].nxt.fill(-1);
+    }
+
+    void extend(int c) {
+        if (st[last].nxt[c] != -1) {
+            int p = last, q = st[p].nxt[c];
+            if (st[p].len + 1 == st[q].len) { last = q; return; }
+            int clone = sz(st);
+            st.push_back(st[q]);
+            st[clone].len = st[p].len + 1;
+            while (p != -1 && st[p].nxt[c] == q) {
+                st[p].nxt[c] = clone;
+                p = st[p].link;
+            }
+            st[q].link = clone;
+            last = clone;
+            return;
+        }
+        int cur = sz(st);
+        st.push_back({st[last].len + 1, 0, {}});
+        st[cur].nxt.fill(-1);
+        int p = last;
+        while (p != -1 && st[p].nxt[c] == -1) {
+            st[p].nxt[c] = cur;
+            p = st[p].link;
+        }
+        if (p == -1) st[cur].link = 0;
+        else {
+            int q = st[p].nxt[c];
+            if (st[p].len + 1 == st[q].len) st[cur].link = q;
+            else {
+                int clone = sz(st);
+                st.push_back(st[q]);
+                st[clone].len = st[p].len + 1;
+                while (p != -1 && st[p].nxt[c] == q) {
+                    st[p].nxt[c] = clone;
+                    p = st[p].link;
+                }
+                st[q].link = st[cur].link = clone;
+            }
+        }
+        last = cur;
+    }
+
+    void build(const string& s) {
+        last = 0;  // 每个字符串从根重新开始
+        for (char ch : s) extend(ch - 'a');
+    }
+};
 ```
 
 <h1 id="6-动态规划">6. 动态规划 (Dynamic Programming)</h1>
