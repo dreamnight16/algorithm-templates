@@ -696,6 +696,54 @@ void restore_xor(const vi& diff, vi& a) {
 
 常见场景：区间异或修改/状态切换（toggle）、树上路径异或标记、边集奇偶性判断。
 
+#### 树上前缀和与树上差分（Tree Prefix Sum & Difference）
+
+**English**: Tree Prefix Sum / Tree Difference | **Chinese**: 树上前缀和 / 树上差分
+
+区间和问题在树上的推广：静态路径和查询用树上前缀和 O(1)（配合 LCA）；路径修改用树上差分 O(1) 打标记，再 DFS 合并 O(N)。
+
+```cpp
+// ---- 树上前缀和（静态路径和查询）----
+// 点权：pre[u] = 根到 u 路径上所有点权和
+// 路径 (u,v) 点权和 = pre[u] + pre[v] - 2*pre[lca] + val[lca]
+void build_prefix(const vvi& adj, int u, int p, const vi& val, vi& pre) {
+    pre[u] = (p == -1 ? 0 : pre[p]) + val[u];  // 点权前缀
+    for (int v : adj[u]) if (v != p) build_prefix(adj, v, u, val, pre);
+}
+// 边权版本：路径 (u,v) 边权和 = pre[u] + pre[v] - 2*pre[lca]
+// （pre[u] 累加的是边 (p,u) 的权值，而非点权）
+```
+
+```cpp
+// ---- 树上差分（路径加 + 单点/边查询）----
+// 点差分：路径 (u,v) 所有点加 w
+// diff[u] += w; diff[v] += w; diff[lca] -= w; diff[fa[lca]] -= w;
+// 合并：DFS 求子树 diff 和，即得每个点的实际修改量
+void add_path_point(vi& diff, int u, int v, int lca, int fa_lca, int w) {
+    diff[u] += w;
+    diff[v] += w;
+    diff[lca] -= w;
+    if (fa_lca != -1) diff[fa_lca] -= w;
+}
+
+// 边差分：路径 (u,v) 所有边加 w（每条边归属其下端点）
+// diff[u] += w; diff[v] += w; diff[lca] -= 2*w;
+void add_path_edge(vi& diff, int u, int v, int lca, int w) {
+    diff[u] += w;
+    diff[v] += w;
+    diff[lca] -= 2 * w;
+}
+
+// 合并（自底向上）：sum_diff[u] = diff[u] + Σ sum_diff[child]
+void dfs_merge(const vvi& adj, int u, int p, vi& diff) {
+    for (int v : adj[u]) if (v != p) {
+        dfs_merge(adj, v, u, diff);
+        diff[u] += diff[v];
+    }
+    // 此时 diff[u] 即为 u 的最终修改量（点差分）或边 (p,u) 的修改量（边差分）
+}
+```
+
 ---
 
 ### 2.2 树状数组 (Fenwick Tree / Binary Indexed Tree)
