@@ -626,6 +626,120 @@ bool is_banned(int v) { return ban[v] == ban_timer; }  // 仅当本轮被删才�
 > 原理：`vis` 数组的值是旧时间戳，与新 `timer` 不相等时自动视为"未访问"，
 > 无需把整块数组清零。配合链式前向星（3.1）是竞赛大图二分 BFS 的标准三件套。
 
+### 常用小技巧（Common Tricks）
+
+**English**: Common Tricks | **Chinese**: 常用小技巧
+
+#### 1. 递归 lambda（y_combinator）
+
+```cpp
+// 自递归 lambda，避免手写递归函数或 std::function 的开销
+template <class F>
+struct y_combinator {
+    F f;
+    template <class... Args>
+    decltype(auto) operator()(Args&&... args) const {
+        return f(*this, std::forward<Args>(args)...);
+    }
+};
+// 用法：
+// auto dfs = y_combinator{[&](auto&& self, int u, int p) -> void {
+//     for (int v : adj[u]) if (v != p) self(v, u);
+// }};
+// dfs(root, -1);
+```
+
+#### 2. 整数二分（二分答案）
+
+```cpp
+// ---- 二分答案：找最大的满足 check 的值 ----
+// check(x) 单调（前 true 后 false）
+ll binary_search_max(ll lo, ll hi) {
+    while (lo < hi) {
+        ll mid = lo + (hi - lo + 1) / 2;  // 向上取整，防死循环
+        if (check(mid)) lo = mid;
+        else hi = mid - 1;
+    }
+    return lo;
+}
+// ---- 找最小的满足 check 的值 ----
+ll binary_search_min(ll lo, ll hi) {
+    while (lo < hi) {
+        ll mid = lo + (hi - lo) / 2;
+        if (check(mid)) hi = mid;
+        else lo = mid + 1;
+    }
+    return lo;
+}
+```
+
+#### 3. __int128 输入输出
+
+```cpp
+// 128 位整数的读写（标准库不支持 cin/cout）
+void read_i128(__int128& x) {
+    x = 0; bool neg = false; char c = getchar();
+    while (c < '0' || c > '9') { neg |= (c == '-'); c = getchar(); }
+    while (c >= '0' && c <= '9') { x = x * 10 + (c - '0'); c = getchar(); }
+    if (neg) x = -x;
+}
+void print_i128(__int128 x) {
+    if (x < 0) { putchar('-'); x = -x; }
+    if (x > 9) print_i128(x / 10);
+    putchar('0' + x % 10);
+}
+```
+
+#### 4. 对拍（随机测试 / Stress Test）
+
+```cpp
+// 用随机数据对比暴力解与正解，赛前验证模板
+void stress_test() {
+    mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+    for (int t = 0; t < 1000; t++) {
+        int n = rng() % 100 + 1;  // 随机生成小数据
+        vi a(n);
+        for (auto& x : a) x = rng() % 1000;
+        auto ans1 = brute(a);   // 暴力（保证正确）
+        auto ans2 = solve(a);   // 正解
+        if (ans1 != ans2) {
+            // 输出反例并退出
+            cout << "WA! n=" << n << endl;
+            return;
+        }
+    }
+    cout << "All passed" << endl;
+}
+```
+
+#### 5. 常用 STL 一行技巧
+
+```cpp
+// 累加 / 前缀和 / 填充 / 生成序列
+ll s = accumulate(all(v), 0LL);              // 求和
+partial_sum(all(v), v.begin());              // 前缀和（原地）
+fill(all(v), 0);                             // 填充
+iota(all(v), 0);                             // v = 0,1,2,...
+
+// 去重（需先排序）
+sort(all(v));
+v.erase(unique(all(v)), v.end());
+
+// 全排列
+sort(all(v));
+do { /* 处理排列 v */ } while (next_permutation(all(v)));
+
+// 查找：lower_bound（第一个 >= x）/ upper_bound（第一个 > x）
+int pos = lower_bound(all(v), x) - v.begin();
+
+// 最大最小元素
+auto [mn, mx] = minmax_element(all(v));
+
+// 字符串 → 数字 / 数字 → 字符串
+int num = stoi("123"); ll big = stoll("1234567890123");
+string str = to_string(12345);
+```
+
 ---
 
 <h2 id="2-基础数据结构">2. 基础数据结构 (Basic Data Structures)</h2>
