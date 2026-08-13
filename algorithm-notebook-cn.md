@@ -505,29 +505,89 @@ auto try_pop = [&]() {
 
 #### 1. 快读快写（Fast I/O with fread）
 
+**English**: Fast I/O | **Chinese**: 快读快写
+
+> ⚠️ **铁律**：用了 fread/fwrite 快读，就**全程只用 `io.read` / `io.write`**，绝不能混用 `cin`/`cout`/`scanf`/`printf`。两者同时操作 `stdin`/`stdout` 会导致缓冲区错位、输入乱掉。
+
 ```cpp
-// ---- 快读（fread 批量读入，比 cin/cout 快数倍）----
-// 适合大量整数输入的题目（如洛谷 5e5+ 数据）
+// ---- 快读快写（fread/fwrite 批量 I/O，含字符串读写）----
 struct FastIO {
-    static const int SZ = 1 << 20;
+    static const int SZ = 1 << 20;   // 1MB 缓冲区
     char inbuf[SZ], outbuf[SZ];
-    int inpos, outpos;
-    FastIO() : inpos(0), outpos(0) {
-        fread(inbuf, 1, SZ, stdin);
-    }
+    int inpos, inlen, outpos;
+
+    FastIO() : inpos(0), inlen(0), outpos(0) {}
+
+    // 从输入缓冲区取一个字符（自动重读，返回 0 表示 EOF）
     inline char getc() {
-        if (inpos >= SZ) { inpos = 0; fread(inbuf, 1, SZ, stdin); }
+        if (inpos >= inlen) {
+            inlen = (int)fread(inbuf, 1, SZ, stdin);
+            inpos = 0;
+            if (inlen == 0) return 0;   // EOF
+        }
         return inbuf[inpos++];
     }
-    template <typename T> inline void read(T& x) {
-        x = 0; char c = getc(); bool neg = false;
-        while (c < '0' || c > '9') { neg |= (c == '-'); c = getc(); }
-        while (c >= '0' && c <= '9') { x = x * 10 + (c - '0'); c = getc(); }
+
+    // ---- 读整数（int / long long 等有符号整型）----
+    template <typename T>
+    void read(T& x) {
+        char c = getc();
+        bool neg = false;
+        while (c <= ' ') c = getc();          // 跳过空白
+        if (c == '-') { neg = true; c = getc(); }
+        x = 0;
+        while (c >= '0' && c <= '9') {        // 逐位累加
+            x = x * 10 + (c - '0');
+            c = getc();
+        }
         if (neg) x = -x;
     }
-    inline void flush() { fwrite(outbuf, 1, outpos, stdout); outpos = 0; }
+
+    // ---- 读字符串（跳过前导空白，读到空白为止）----
+    void read(string& s) {
+        s.clear();
+        char c = getc();
+        while (c <= ' ') c = getc();
+        while (c > ' ') { s.push_back(c); c = getc(); }
+    }
+
+    // ---- 读单个字符（跳过空白）----
+    void read(char& ch) {
+        ch = getc();
+        while (ch <= ' ') ch = getc();
+    }
+
+    // ---- 输出（缓冲，满 SZ 自动 flush）----
+    inline void push(char c) {
+        if (outpos >= SZ) flush();
+        outbuf[outpos++] = c;
+    }
+    void write(const char* s) { while (*s) push(*s++); }
+    void write(const string& s) { for (char c : s) push(c); }
+
+    template <typename T>
+    void write(T x) {
+        if (x < 0) { push('-'); x = -x; }
+        if (x >= 10) write(x / 10);
+        push('0' + (char)(x % 10));
+    }
+    template <typename T>
+    void writeln(T x) { write(x); push('\n'); }
+
+    void flush() { if (outpos) fwrite(outbuf, 1, outpos, stdout); outpos = 0; }
     ~FastIO() { flush(); }
 };
+
+// ---- 用法示例 ----
+// FastIO io;
+// int t; io.read(t);
+// while (t--) {
+//     int n, m; io.read(n); io.read(m);
+//     vector<string> g(n);
+//     for (auto& s : g) io.read(s);      // 读字符串（地图）
+//     ...
+//     io.writeln(ans);                   // 输出 + 换行
+// }
 ```
 
 #### 2. 编译优化指令（Pragma）
