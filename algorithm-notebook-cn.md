@@ -583,6 +583,49 @@ int dp[MAXN][MAXM];  // 优于 vector<vector<int>>
 // 位运算替代乘除 2 的幂：x << 1, x >> 1, x & 1
 ```
 
+#### 6. 时间戳标记（Timer / 访问时间戳）
+
+**English**: Timestamp Trick | **Chinese**: 时间戳标记 / 访问时间戳
+
+避免反复 `memset` 清空数组：给每次搜索一个递增编号，用 `vis[v] == timer` 判断是否本轮访问。清空 O(N) → O(1)。
+二分答案等多次 BFS/DFS 场景的标配（大图 $n=10^5, m=10^6$ 尤其明显）。
+
+```cpp
+// ---- 时间戳标记（替代 memset 清空 vis）----
+int timer = 0;
+vi vis(n + 1);   // vis[v] = 最后一次访问 v 的时间戳
+
+bool bfs(int src) {
+    timer++;             // 新的一轮，编号自增，无需清空 vis
+    queue<int> q;
+    q.push(src);
+    vis[src] = timer;    // 标记为本轮访问
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (int v : adj[u]) {
+            if (vis[v] != timer) {  // 本轮未访问过（旧时间戳自动失效）
+                vis[v] = timer;
+                q.push(v);
+            }
+        }
+    }
+    return ...;
+}
+```
+
+```cpp
+// ---- 删除时间戳（Ban）----
+// 标记某个元素在"第 ban_timer 轮之前"被删除/禁用，同样避免 memset
+int ban_timer = 0;
+vi ban(n + 1);       // ban[v] = 被删除的时间戳
+
+ban[v] = ++ban_timer;        // 删除 v
+bool is_banned(int v) { return ban[v] == ban_timer; }  // 仅当本轮被删才生效
+```
+
+> 原理：`vis` 数组的值是旧时间戳，与新 `timer` 不相等时自动视为"未访问"，
+> 无需把整块数组清零。配合链式前向星（3.1）是竞赛大图二分 BFS 的标准三件套。
+
 ---
 
 <h2 id="2-基础数据结构">2. 基础数据结构 (Basic Data Structures)</h2>
