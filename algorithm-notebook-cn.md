@@ -1436,6 +1436,104 @@ struct LeftistHeap {
 };
 ```
 
+### 2.12 可持久化数组 (Persistent Array / Persistent Segment Tree)
+
+**English**: Persistent Array | **Chinese**: 可持久化数组 / 可持久化线段树
+
+支持单点修改并保留历史版本，每次修改 O(log N) 新增节点。是主席树、可持久化并查集、可持久化 Trie 的基础。
+
+```cpp
+// ---- 可持久化数组（线段树版本）----
+// 版本 roots[0..]；每次 update 返回新版本根
+struct PersistentArray {
+    struct Node { int l, r, val; };
+    vector<Node> t;
+    vi roots;
+    int n;
+
+    PersistentArray(const vi& a) {
+        n = sz(a);
+        roots.pb(build(0, n - 1, a));
+    }
+
+    int build(int l, int r, const vi& a) {
+        int id = sz(t);
+        t.push_back({0, 0, 0});
+        if (l == r) { t[id].val = a[l]; return id; }
+        int m = (l + r) / 2;
+        t[id].l = build(l, m, a);
+        t[id].r = build(m + 1, r, a);
+        return id;
+    }
+
+    // 在版本 root 基础上修改位置 pos 为 val，返回新版本根
+    int update(int root, int l, int r, int pos, int val) {
+        int id = sz(t);
+        t.push_back(t[root]);  // 复制节点（路径复制）
+        if (l == r) { t[id].val = val; return id; }
+        int m = (l + r) / 2;
+        if (pos <= m) t[id].l = update(t[root].l, l, m, pos, val);
+        else          t[id].r = update(t[root].r, m + 1, r, pos, val);
+        return id;
+    }
+    int set(int root, int pos, int val) { return update(root, 0, n - 1, pos, val); }
+
+    int query(int root, int l, int r, int pos) {
+        if (l == r) return t[root].val;
+        int m = (l + r) / 2;
+        if (pos <= m) return query(t[root].l, l, m, pos);
+        return query(t[root].r, m + 1, r, pos);
+    }
+    int get(int root, int pos) { return query(root, 0, n - 1, pos); }
+};
+```
+
+### 2.13 树套树（线段树套平衡树 / 树状数组套线段树）
+
+**English**: Tree-in-Tree (Segment Tree over Balanced BST) | **Chinese**: 树套树
+
+外层树维护区间，内层树维护该区间内的有序值。支持区间内排名、区间第 k 小、区间前驱后继等动态操作。
+
+```cpp
+// ---- 树状数组套权值线段树（带修区间第 k 小）----
+// 外层 BIT 维护位置，内层权值线段树维护每个位置对应的历史版本
+// 用于"带单点修改的区间第 k 小"，复杂度 O(log^2 n)
+// 思路：BIT 的每个节点维护一棵动态开点权值线段树
+struct BITSegTree {
+    int n, maxv;
+    vector<int> roots;
+    struct Node { int l, r, sum; };
+    vector<Node> t;
+
+    BITSegTree(int n_, int maxv_) : n(n_), maxv(maxv_), roots(n_ + 1) {
+        t.push_back({0, 0, 0});
+    }
+
+    int update(int o, int l, int r, int pos, int delta) {
+        if (!o) { o = sz(t); t.push_back({0, 0, 0}); }
+        t[o].sum += delta;
+        if (l == r) return o;
+        int m = (l + r) / 2;
+        if (pos <= m) t[o].l = update(t[o].l, l, m, pos, delta);
+        else          t[o].r = update(t[o].r, m + 1, r, pos, delta);
+        return o;
+    }
+
+    void add(int i, int val, int delta) {
+        for (; i <= n; i += i & -i)
+            roots[i] = update(roots[i], 1, maxv, val, delta);
+    }
+
+    // 收集 BIT 前缀 [1..i] 的所有根
+    vi gather(int i) {
+        vi res;
+        for (; i > 0; i -= i & -i) res.pb(roots[i]);
+        return res;
+    }
+    // 查询需要配合 gather 在权值线段树上二分（见 9.4.4 完整实现）
+};
+```
+
 <h2 id="3-图论">3. 图论 (Graph Theory)</h2>
 
 ### 3.1 Graph Representation（图的存储）
@@ -4831,6 +4929,70 @@ vector<string> dedupCyclic(const vector<string> &words) {
 | 字符串哈希  | $O(n)$                        | $O(1)$ / 子串    | $O(n)$                        | 子串判等、二分 LCP |
 | 最小表示法  | $O(n)$                        | --               | $O(1)$                        | 循环同构判等       |
 
+## 5.9 后缀自动机 (Suffix Automaton / SAM)
+
+**English**: Suffix Automaton | **Chinese**: 后缀自动机
+
+接受字符串所有子串的最小确定性有限自动机，状态数/转移数 O(N)。支持在线构建，O(N)。
+用于本质不同子串数、最长公共子串、子串出现次数、第 k 小子串等。
+
+```cpp
+// ---- 后缀自动机（在线构建）----
+// 状态 0 为初始状态；len[v] = 该状态对应最长子串长度
+// link[v] = 后缀链接（parent 树）；nxt[v][c] = 转移
+struct SAM {
+    struct State { int len, link; array<int, 26> nxt; };
+    vector<State> st;
+    int last;
+
+    SAM() : st(1), last(0) {
+        st[0] = {0, -1, {}};
+        st[0].nxt.fill(-1);
+    }
+
+    void extend(int c) {
+        int cur = sz(st);
+        st.push_back({st[last].len + 1, 0, {}});
+        st[cur].nxt.fill(-1);
+        int p = last;
+        while (p != -1 && st[p].nxt[c] == -1) {
+            st[p].nxt[c] = cur;
+            p = st[p].link;
+        }
+        if (p == -1) {
+            st[cur].link = 0;
+        } else {
+            int q = st[p].nxt[c];
+            if (st[p].len + 1 == st[q].len) {
+                st[cur].link = q;
+            } else {
+                int clone = sz(st);
+                st.push_back(st[q]);
+                st[clone].len = st[p].len + 1;
+                while (p != -1 && st[p].nxt[c] == q) {
+                    st[p].nxt[c] = clone;
+                    p = st[p].link;
+                }
+                st[q].link = st[cur].link = clone;
+            }
+        }
+        last = cur;
+    }
+
+    void build(const string& s) {
+        for (char ch : s) extend(ch - 'a');
+    }
+};
+
+// ---- 本质不同子串个数 ----
+// sum(len[v] - len[link[v]])，或 DP 统计路径数
+ll count_distinct_substr(const SAM& sam) {
+    ll ans = 0;
+    rep(v, 1, sz(sam.st)) ans += sam.st[v].len - sam.st[sam.st[v].link].len;
+    return ans;
+}
+```
+
 <h1 id="6-动态规划">6. 动态规划 (Dynamic Programming)</h1>
 
 ## 6.1 背包问题 (Knapsack Problems)
@@ -7558,6 +7720,90 @@ vector<Face> convexHull3D(vector<P3> pts) {
 | 三维凸包       | 3D Convex Hull             | O(N^2)     | 增量法         | 参考 KACTL Point3D.h              |
 
 ---
+
+### 7.16 KD-Tree（k 维树）
+
+**English**: KD-Tree | **Chinese**: k 维树 / KD 树
+
+对 k 维空间点集的二叉空间划分。支持最近邻查询、矩形区域查询、k 近邻。二维最近邻期望 O(log N)，最坏 O(N)。
+
+```cpp
+// ---- 二维 KD-Tree（最近邻查询）----
+// 交替按 x/y 轴划分；用 bounding box 剪枝
+struct KDTree {
+    struct Node {
+        ll x, y;
+        int l, r;
+        ll minx, maxx, miny, maxy;  // 子树包围盒
+    };
+    vector<Node> t;
+    ll best;
+
+    KDTree(const vector<pll>& pts) {
+        t.resize(sz(pts));
+        int root = build(pts, 0, sz(pts) - 1, 0);
+    }
+
+    int build(vector<pll> pts, int l, int r, int dim) {
+        if (l > r) return -1;
+        int m = (l + r) / 2;
+        // nth_element 按当前维找中位数
+        if (dim == 0) nth_element(pts.begin() + l, pts.begin() + m, pts.begin() + r + 1,
+            [](const pll& a, const pll& b){ return a.first < b.first; });
+        else nth_element(pts.begin() + l, pts.begin() + m, pts.begin() + r + 1,
+            [](const pll& a, const pll& b){ return a.second < b.second; });
+
+        int id = m;
+        t[id].x = pts[m].first;
+        t[id].y = pts[m].second;
+        t[id].l = build(pts, l, m - 1, dim ^ 1);
+        t[id].r = build(pts, m + 1, r, dim ^ 1);
+        pull(id);
+        return id;
+    }
+
+    void pull(int id) {
+        t[id].minx = t[id].maxx = t[id].x;
+        t[id].miny = t[id].maxy = t[id].y;
+        for (int c : {t[id].l, t[id].r}) if (c != -1) {
+            t[id].minx = min(t[id].minx, t[c].minx);
+            t[id].maxx = max(t[id].maxx, t[c].maxx);
+            t[id].miny = min(t[id].miny, t[c].miny);
+            t[id].maxy = max(t[id].maxy, t[c].maxy);
+        }
+    }
+
+    ll sq(ll x) { return x * x; }
+
+    // 剪枝：点到包围盒的最近距离
+    ll mindist(int id, ll x, ll y) {
+        ll dx = max({0LL, t[id].minx - x, x - t[id].maxx});
+        ll dy = max({0LL, t[id].miny - y, y - t[id].maxy});
+        return dx * dx + dy * dy;
+    }
+
+    void query(int id, ll x, ll y) {
+        if (id == -1) return;
+        best = min(best, sq(t[id].x - x) + sq(t[id].y - y));
+        ll dl = (t[id].l != -1) ? mindist(t[id].l, x, y) : 4e18;
+        ll dr = (t[id].r != -1) ? mindist(t[id].r, x, y) : 4e18;
+        if (dl < dr) {
+            if (dl < best) query(t[id].l, x, y);
+            if (dr < best) query(t[id].r, x, y);
+        } else {
+            if (dr < best) query(t[id].r, x, y);
+            if (dl < best) query(t[id].l, x, y);
+        }
+    }
+
+    // 查询点 (x,y) 的最近点距离平方
+    ll nearest(int root, ll x, ll y) {
+        best = 4e18;
+        query(root, x, y);
+        return best;
+    }
+};
+```
 
 <h1 id="8-网络流">8 网络流</h1>
 
