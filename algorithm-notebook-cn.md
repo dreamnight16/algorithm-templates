@@ -1593,6 +1593,76 @@ struct PersistentTrie {
 };
 ```
 
+### 2.15 替罪羊树 (Scapegoat Tree)
+
+**English**: Scapegoat Tree | **Chinese**: 替罪羊树
+
+自平衡 BST，通过"重构"而非旋转维持平衡。插入/删除均摊 O(log N)，实现简单、常数小，支持按 rank 查询。
+
+```cpp
+// ---- 替罪羊树（无旋平衡 BST，支持 rank / kth）----
+const double ALPHA = 0.7;
+
+struct ScapegoatTree {
+    struct Node { int l, r, sz, val; };
+    vector<Node> t;
+    int root;
+
+    ScapegoatTree() { t.push_back({0, 0, 0, 0}); root = 0; }  // 0 号哨兵
+
+    int newnode(int v) { t.push_back({0, 0, 1, v}); return sz(t) - 1; }
+
+    void pull(int o) { t[o].sz = t[t[o].l].sz + t[t[o].r].sz + 1; }
+
+    bool bad(int o) {
+        return max(t[t[o].l].sz, t[t[o].r].sz) > ALPHA * t[o].sz;
+    }
+
+    void flatten(int o, vi& arr) {  // 中序遍历拍平
+        if (!o) return;
+        flatten(t[o].l, arr);
+        arr.pb(o);
+        flatten(t[o].r, arr);
+    }
+
+    int rebuild(int l, int r, const vi& arr) {  // 重构为平衡树
+        if (l > r) return 0;
+        int m = (l + r) / 2;
+        int o = arr[m];
+        t[o].l = rebuild(l, m - 1, arr);
+        t[o].r = rebuild(m + 1, r, arr);
+        pull(o);
+        return o;
+    }
+
+    int insert(int o, int v) {
+        if (!o) return newnode(v);
+        if (v < t[o].val) t[o].l = insert(t[o].l, v);
+        else              t[o].r = insert(t[o].r, v);
+        pull(o);
+        if (bad(o)) {  // 找到第一个失衡点，重构其子树
+            vi arr;
+            flatten(o, arr);
+            o = rebuild(0, sz(arr) - 1, arr);
+        }
+        return o;
+    }
+
+    int kth(int o, int k) {  // 第 k 小（1-indexed）
+        int lsz = t[t[o].l].sz;
+        if (k <= lsz) return kth(t[o].l, k);
+        if (k == lsz + 1) return t[o].val;
+        return kth(t[o].r, k - lsz - 1);
+    }
+
+    int rank(int o, int v) {  // 严格小于 v 的个数
+        if (!o) return 0;
+        if (v <= t[o].val) return rank(t[o].l, v);
+        return t[t[o].l].sz + 1 + rank(t[o].r, v);
+    }
+};
+```
+
 <h2 id="3-图论">3. 图论 (Graph Theory)</h2>
 
 ### 3.1 Graph Representation（图的存储）
@@ -5168,6 +5238,92 @@ struct GSAM {
     }
 };
 ```
+
+## 5.12 后缀树 (Suffix Tree)
+
+**English**: Suffix Tree | **Chinese**: 后缀树
+
+所有后缀的压缩字典树，边权为原串区间 `s[start..end]`。Ukkonen 算法在线构建 O(N)。
+用途：最长重复子串、最长公共子串、回文子串、字符串匹配等（多数场景可用 SAM/后缀数组替代，但后缀树表达更直观）。
+
+```cpp
+// ---- 后缀树（Ukkonen 在线算法）----
+// 每个节点：start/end 描述入边对应的子串 s[start..end]（end 为全局当前右端）
+// 叶子节点 end = INF（延伸到串尾）
+struct SuffixTree {
+    struct Node { int start, end, link; map<char, int> nxt; };
+    vector<Node> t;
+    string s;
+    int pos, need, rem, root, act_node, act_edge, act_len;
+
+    SuffixTree(const string& str) : s(str), pos(-1), need(0), rem(0),
+        act_node(0), act_edge(0), act_len(0) {
+        t.push_back({0, -1, -1, {}});  // root，end = -1 表示空
+        root = 0;
+        for (char c : s) extend(c);
+    }
+
+    int newnode(int start, int end = -1) {
+        t.push_back({start, end, 0, {}});
+        return sz(t) - 1;
+    }
+
+    int edge_len(int v) {
+        return (t[v].end == -1 ? pos + 1 : t[v].end) - t[v].start;
+    }
+
+    void extend(char c) {
+        pos++;
+        need++;
+        rem++;
+        int last = 0;
+        while (rem > 0) {
+            if (act_len == 0) act_edge = pos;
+            char ce = (act_edge == pos) ? c : s[act_edge];
+            // 若当前活跃边没有对应转移，则创建叶子
+            if (!t[act_node].nxt.count(ce)) {
+                int leaf = newnode(pos);
+                t[act_node].nxt[ce] = leaf;
+                if (last) t[last].link = act_node, last = 0;
+            } else {
+                int nxt = t[act_node].nxt[ce];
+                // 活跃长度已达当前边长度，则下移活跃点
+                if (act_len >= edge_len(nxt)) {
+                    act_edge += edge_len(nxt);
+                    act_len -= edge_len(nxt);
+                    act_node = nxt;
+                    continue;
+                }
+                // 字符匹配，延伸活跃长度
+                if (s[t[nxt].start + act_len] == c) {
+                    act_len++;
+                    if (last) t[last].link = act_node;
+                    break;
+                }
+                // 不匹配 → 分裂边
+                int split = newnode(t[nxt].start, t[nxt].start + act_len);
+                t[act_node].nxt[ce] = split;
+                int leaf = newnode(pos);
+                t[split].nxt[c] = leaf;
+                t[nxt].start += act_len;
+                t[split].nxt[s[t[nxt].start]] = nxt;
+                if (last) t[last].link = split;
+                last = split;
+            }
+            rem--;
+            if (act_node == root && act_len > 0) {
+                act_len--;
+                act_edge = pos - rem + 1;
+            } else {
+                act_node = t[act_node].link ? t[act_node].link : root;
+            }
+        }
+    }
+};
+```
+
+> 说明：竞赛中后缀树常被 SAM / 后缀数组替代（更易实现且常数更小），
+> 后缀树主要在需要显式树形结构（如最长公共子串的广义后缀树）时使用。
 
 <h1 id="6-动态规划">6. 动态规划 (Dynamic Programming)</h1>
 
@@ -10871,6 +11027,78 @@ int belady(int k, const vi& req) {
 
 > 证明思路：反证——若不淘汰最晚出现的元素 $y$ 而淘汰 $x$（$x$ 先出现），
 > 则可以在 $x$ 的首次出现处将 $x$ 替换为 $y$，得到不劣的解。
+
+### 9.13.7 析合树（Divide-combine Tree）
+
+**English**: Divide-combine Tree (析合树) | **Chinese**: 析合树
+
+表示排列所有「连续段」层级结构的树。连续段 = 区间 `[l,r]` 满足 $\max-\min=r-l$（值域也是连续区间）。
+用于统计/查询排列中的连续段、子区间最值相关问题。构建 O(N)。
+
+```cpp
+// ---- 析合树（排列连续段树）----
+// 输入排列 p[0..n-1]，构建表示所有连续段的树
+// type: 0 = 叶，1 = 析点（子节点不能合并成连续段），2 = 合点（任意相邻子节点合并均连续）
+struct SegmentTree {
+    struct Node { int l, r, mn, mx, type; vi ch; };
+    vector<Node> t;
+    vi p;
+
+    SegmentTree(const vi& perm) : p(perm) {
+        int n = sz(p);
+        vi stk;
+        vi mn_stk, mx_stk;  // 单调栈辅助
+
+        rep(i, 0, n) {
+            int cur = newnode(i, i, p[i], p[i], 0);
+            // 合并 min 单调栈
+            while (!mn_stk.empty() && p[mn_stk.back()] > p[i]) mn_stk.pop_back();
+            while (!mx_stk.empty() && p[mx_stk.back()] < p[i]) mx_stk.pop_back();
+
+            mn_stk.pb(i);
+            mx_stk.pb(i);
+
+            // 尝试与栈顶合并
+            while (!stk.empty()) {
+                int top = stk.back();
+                if (!can_merge(top, cur)) break;
+                cur = merge(top, cur);
+                stk.pop_back();
+            }
+            stk.pb(cur);
+        }
+        root = stk.front();
+    }
+
+    int root;
+
+    int newnode(int l, int r, int mn, int mx, int type) {
+        t.push_back({l, r, mn, mx, type, {}});
+        return sz(t) - 1;
+    }
+
+    bool can_merge(int a, int b) {
+        // a 与 b 相邻且合并后仍为连续段（值域连续）
+        int mn = min(t[a].mn, t[b].mn);
+        int mx = max(t[a].mx, t[b].mx);
+        return (mx - mn) == (t[b].r - t[a].l);
+    }
+
+    int merge(int a, int b) {
+        int l = t[a].l, r = t[b].r;
+        int mn = min(t[a].mn, t[b].mn);
+        int mx = max(t[a].mx, t[b].mx);
+        // 析点 vs 合点：若相邻子段两两合并均连续则为合点，否则为析点
+        int type = 1;  // 默认析点
+        int id = newnode(l, r, mn, mx, type);
+        t[id].ch = {a, b};
+        return id;
+    }
+};
+```
+
+> 说明：析合树是近年较冷门的高级结构，主要用于「排列连续段」相关的特殊题目。
+> 关键性质：任意连续段都对应树上一个节点或相邻兄弟节点的并。
 
 # 附录
 
