@@ -626,6 +626,90 @@ bool is_banned(int v) { return ban[v] == ban_timer; }  // 仅当本轮被删才�
 > 原理：`vis` 数组的值是旧时间戳，与新 `timer` 不相等时自动视为"未访问"，
 > 无需把整块数组清零。配合链式前向星（3.1）是竞赛大图二分 BFS 的标准三件套。
 
+#### 7. 分支预测提示（likely / unlikely）
+
+```cpp
+// 提示编译器优化分支预测，减少流水线停顿（C++20 用 [[likely]]/[[unlikely]]）
+#define likely(x)   __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
+// 用法：
+if (unlikely(a == 0)) return;   // 该分支很少发生
+if (likely(x > 0)) { ... }      // 该分支大概率发生
+```
+
+#### 8. 无分支编程（Branchless）
+
+```cpp
+// 用位运算消除 if，避免分支预测失败
+// 无分支取绝对值
+int abs_branchless(int x) {
+    int mask = x >> 31;      // 负数全 1，非负全 0
+    return (x + mask) ^ mask;
+}
+// 无分支求 min/max
+int min_branchless(int a, int b) { return b ^ ((a ^ b) & -(a < b)); }
+int max_branchless(int a, int b) { return a ^ ((a ^ b) & -(a < b)); }
+```
+
+#### 9. 延迟取模（减少 % 运算）
+
+```cpp
+// 取模（除法）很慢；累加多次后统一取模
+// 坏：每次循环都 %
+for (int i = 0; i < n; i++) ans = (ans + a[i]) % MOD;
+// 好：延迟取模，减少 % 次数
+ll tmp = 0;
+for (int i = 0; i < n; i++) {
+    tmp += a[i];
+    if (tmp >= MOD) tmp -= MOD;  // 加法用减法替代 %
+}
+```
+
+#### 10. 容器复用与类型选择
+
+```cpp
+// clear() 保留容量，避免反复 realloc（比每次新建 vector 快）
+vector<int> tmp;
+for (...) {
+    tmp.clear();          // 复用，不释放内存
+    // ... 使用 tmp
+}
+
+// int 比 long long 快（32 位 vs 64 位），够用就用 int
+// 模数用 const 而非变量，编译器可优化
+const int MOD = 1e9 + 7;   // const 优于 int MOD
+
+// 避免 std::stack/queue 的大常数，用数组模拟
+int stk[MAXN], top = 0;
+stk[top++] = x;            // 入栈
+int y = stk[--top];        // 出栈
+```
+
+#### 11. 循环优化（循环不变量外提 + 局部变量缓存）
+
+```cpp
+// 循环不变量外提：不变量计算移出循环
+// 坏：
+for (int i = 0; i < n; i++) a[i] = x * y + z;
+// 好：
+int base = x * y + z;
+for (int i = 0; i < n; i++) a[i] = base;
+
+// 局部变量缓存：把频繁访问的数组元素缓存到寄存器
+// 坏：反复访问 g[i][j]
+for (int i = 0; i < n; i++)
+    for (int j = 0; j < m; j++) s += g[i][j];
+// 好：缓存当前行指针
+for (int i = 0; i < n; i++) {
+    auto& row = g[i];
+    for (int j = 0; j < m; j++) s += row[j];
+}
+
+// 循环展开（编译器 -O2 会自动做，手动展开用于极端卡常）
+// for (int i = 0; i + 4 <= n; i += 4) { ... 处理 4 个 ... }
+```
+
 ### 常用小技巧（Common Tricks）
 
 **English**: Common Tricks | **Chinese**: 常用小技巧
