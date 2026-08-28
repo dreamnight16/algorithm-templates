@@ -74,6 +74,7 @@ using namespace std;
 // ---- 类型别名 ----
 using ll = long long;
 using ull = unsigned long long;
+using ld = long double;   // 高精度浮点，几何 / 威佐夫博弈(φ) 等需要大数精度时用
 using pii = pair<int, int>;
 using pll = pair<ll, ll>;
 using vi = vector<int>;
@@ -817,7 +818,89 @@ ll binary_search_min(ll lo, ll hi) {
 }
 ```
 
-#### 3. __int128 输入输出
+#### 3. 三分查找（单峰函数极值）
+
+**English**: Ternary Search | **Chinese**: 三分查找 / 三分搜索
+
+三分查找用于求**单峰函数**（先单调递增后单调递减，或相反）在区间 $[l, r]$ 上的**极值**。二分查找要求函数单调，而三分查找只要求函数单峰，每次求值排除约 1/3 的区间，$O(\log n)$ 次求值即可逼近极值点。
+
+- **整数域**：区间缩到只剩 ≤ 2 个点时暴力扫一遍，避免边界漏解。
+- **浮点域**：固定迭代次数（200 次即可达到 `double` 精度），避免 EPS 设置不当。
+
+**复杂度**：$O(\log N)$ 次 `f(x)` 求值，$O(1)$ 额外空间。
+
+```cpp
+// ---- 整数三分：求单峰函数 f 在 [l, r] 上的最大值（f 先增后减）----
+ll ternary_search_max_int(ll l, ll r) {
+    while (r - l > 2) {                       // 留 ≤ 2 个点，收尾扫一遍防漏解
+        ll m1 = l + (r - l) / 3;
+        ll m2 = r - (r - l) / 3;
+        if (f(m1) < f(m2)) l = m1;            // 峰在右半边
+        else               r = m2;            // 峰在左半边
+    }
+    ll ans = f(l);
+    for (ll x = l + 1; x <= r; ++x) ans = max(ans, f(x));
+    return ans;
+}
+
+// ---- 整数三分：求最小值（f 先减后增），比较符号反过来即可 ----
+ll ternary_search_min_int(ll l, ll r) {
+    while (r - l > 2) {
+        ll m1 = l + (r - l) / 3;
+        ll m2 = r - (r - l) / 3;
+        if (f(m1) > f(m2)) l = m1;            // 谷在右半边
+        else               r = m2;
+    }
+    ll ans = f(l);
+    for (ll x = l + 1; x <= r; ++x) ans = min(ans, f(x));
+    return ans;
+}
+```
+
+```cpp
+// ---- 浮点三分：求单峰函数 f 在 [l, r] 上的最大值 ----
+double ternary_search_max_double(double l, double r) {
+    for (int it = 0; it < 200; ++it) {        // 200 次迭代足够 double 精度
+        double m1 = l + (r - l) / 3.0;
+        double m2 = r - (r - l) / 3.0;
+        if (f(m1) < f(m2)) l = m1;
+        else               r = m2;
+    }
+    return (l + r) / 2.0;
+}
+
+// ---- 浮点三分：求最小值（f 先减后增）----
+double ternary_search_min_double(double l, double r) {
+    for (int it = 0; it < 200; ++it) {
+        double m1 = l + (r - l) / 3.0;
+        double m2 = r - (r - l) / 3.0;
+        if (f(m1) > f(m2)) l = m1;
+        else               r = m2;
+    }
+    return (l + r) / 2.0;
+}
+```
+
+**使用示例**：
+
+```cpp
+// 注意：整数三分内部调用 ll f(ll)，浮点三分内部调用 double f(double)。
+// 二者可用函数重载共存（参数类型不同）。
+double f(double x) { return (x - 3) * (x - 3); }    // 凸函数，最小值在 x=3
+double xmin = ternary_search_min_double(0.0, 10.0); // ≈ 3.0，f(3)=0
+
+ll f(ll x) { return -x * x + 8 * x; }               // 先增后减，最大值在 x=4
+ll xmax = ternary_search_max_int(0, 10);            // = 16
+```
+
+#### 常见坑点
+
+- **严格单峰**：若函数有平台（多段相等），三分仍会停在某个极值点，但具体位置不定；需区分具体极值点时应手动扫描。
+- **整数边界**：用 `while (r - l > 2)` + 收尾扫描，避免 `while (l < r)` 写法在相邻点处漏解。
+- **浮点精度**：优先固定迭代次数，而非比较 `r - l < EPS`。
+- **求最小 vs 最大**：互换比较符号，或对 `f` 取负后复用求最大版本。
+
+#### 4. __int128 输入输出
 
 ```cpp
 // 128 位整数的读写（标准库不支持 cin/cout）
@@ -834,7 +917,7 @@ void print_i128(__int128 x) {
 }
 ```
 
-#### 4. 对拍（随机测试 / Stress Test）
+#### 5. 对拍（随机测试 / Stress Test）
 
 ```cpp
 // 用随机数据对比暴力解与正解，赛前验证模板
@@ -856,7 +939,7 @@ void stress_test() {
 }
 ```
 
-#### 5. 常用 STL 一行技巧
+#### 6. 常用 STL 一行技巧
 
 ```cpp
 // 累加 / 前缀和 / 填充 / 生成序列
@@ -3916,7 +3999,28 @@ ll ex_bsgs(ll a, ll b, ll m) {
 
 ### 4.11 博弈论
 
+**English**: Game Theory | **Chinese**: 博弈论 / SG 定理
+
+公平组合游戏 (ICG / impartial game)：两名玩家轮流、信息完全、无随机。由 SG 理论统一判定先手必胜/必败。
+
 ```cpp
+// ---- 巴什博弈 (Bash Game) ----
+// N 个石子，每轮能取 1~M 个。取到最后者胜。
+// 先手必胜 ⇔ N % (M + 1) != 0
+bool bash_winner(ull N, ull M) { return N % (M + 1) != 0; }
+
+// ---- 威佐夫博弈 (Wythoff Game) ----
+// 两堆石子 (a, b)。每轮：从任一堆取任意个，或从两堆取相同任意个。取完最后者胜。
+// 奇异局势 (先手必败态) 恰为 Beatty 序列：a_k = ⌊k·φ⌋, b_k = ⌊k·φ²⌋ = a_k + k
+//   φ = (1+√5)/2 ≈ 1.6180339887498948482  (黄金分割)
+// 判断：设 a<=b, diff=b-a，若 ⌊diff·φ⌋ == a 则该局面是先手必败，否则必胜。
+bool wythoff_winner(ll a, ll b) {
+    if (a > b) swap(a, b);
+    // long double 字面量保证 diff 高达 ~1e18 仍精确（L 后缀 = long double）
+    ll k = (ll)((b - a) * 1.6180339887498948482L);
+    return k != a;      // k == a => 必败
+}
+
 // ---- Nim 游戏 ----
 // N 堆石子，每轮可从任意一堆取至少 1 个。取到最后者为胜。
 // 先手必胜当且仅当所有堆石子数的异或和 != 0
@@ -3926,20 +4030,54 @@ bool nim_winner(const vi& piles) {
     return x != 0;
 }
 
+// ---- Anti-Nim（反 Nim / misère） ----
+// 规则同 Nim，但取到最后一个石子者判负。
+// 先手必胜 ⇔ (所有堆大小 <= 1 且数目为偶) || (存在 >= 2 的堆且异或和 != 0)
+bool anti_nim_winner(const vi& piles) {
+    int x = 0, cnt1 = 0, mx = 0;
+    for (int p : piles) { x ^= p; cnt1 += (p == 1); mx = max(mx, p); }
+    if (mx <= 1) return cnt1 % 2 == 0;  // 全为 0/1：轮流取 1，拿最后一颗者负 => 偶数堆先手胜
+    return x != 0;                       // 存在 >=2 堆：同普通 Nim 判定
+}
+
 // ---- SG 函数 / Sprague-Grundy 定理 ----
 // 公平组合游戏：状态 → 可到达状态集合
-// SG(state) = mex{SG(可到达状态)}
+// SG(state) = mex{ SG(可到达状态) }，mex = 最小未出现的非负整数
 // 组合游戏的 SG = 各子游戏 SG 的异或和；SG != 0 则先手必胜
-// 使用 DP / 记忆化搜索计算 SG 值
-vi compute_grundy(int max_n) {
-    vi sg(max_n + 1, 0);
-    rep(i, 1, max_n + 1) {
-        set<int> reachable;
-        // 对每个可选操作：
-        // reachable.insert(sg[i - move]);  // 具体取决于游戏规则
-        // 然后：while (reachable.count(sg[i])) sg[i]++;
+// 适用：有向图游戏（DAG 拆分）、取石子变体等独立、无后效的游戏。
+
+// 通用自底向上 DP，O(状态数 × 转移数)
+// nx(state)：返回该状态所有合法后继态
+vi grundy(int max_state, const function<vi(int)>& nx) {
+    vi sg(max_state + 1, 0);
+    rep(s, 0, max_state + 1) {
+        vector<char> seen(max_state + 1, false);  // 桶判 mex，比 set 快
+        for (int t : nx(s))
+            if (t >= 0 && t <= max_state) seen[sg[t]] = true;
+        int g = 0;
+        while (seen[g]) g++;
+        sg[s] = g;
     }
     return sg;
+}
+
+// 记忆化递归版（图上博弈、状态不连续时更省空间）
+// vi memo(n, -1);
+// int sg_state(int s, const function<vi(int)>& nx) {
+//     if (memo[s] != -1) return memo[s];
+//     set<int> reach;
+//     for (int t : nx(s)) reach.insert(sg_state(t, nx));
+//     int g = 0; while (reach.count(g)) g++;
+//     return memo[s] = g;
+// }
+
+// ---- 阶梯博弈 (Staircase Nim) ----
+// N 级阶梯，每级有若干石子。每轮从第 i 级取若干放到 i-1 级（第 1 级 → 地面）。
+// 等效于只在奇数级上做普通 Nim，先手必胜 ⇔ 奇数级石子异或和 != 0
+bool staircase_nim_winner(const vi& a) {  // a[i] = 第 i 级石子数 (1-indexed)
+    int x = 0;
+    rep(i, 1, sz(a) + 1) if (i & 1) x ^= a[i - 1];
+    return x != 0;
 }
 ```
 
@@ -8086,7 +8224,19 @@ Dinic 算法是竞赛中最常用的最大流算法，核心思想是 **分层�
 ```cpp
 /**
  * Dinic 最大流 — 标准 BFS + DFS 版本
- * 时间复杂度: O(V^2 * E)，单位容量: O(E * sqrt(V))
+ *
+ * 【图的性质】有向图：每条有向边 u->v 有容量 cap；反向边 v->u 容量为 0，
+ *             仅是算法内部用于「退流」的残量边，不代表原图中存在 v->u 的边。
+ *             若原图确有 v->u 的边，需再调用一次 add_edge(v, u, cap)。
+ *             （残量边的存在是为了支持撤销流量，不是把图变成无向/双向图。）
+ *
+ * 使用：
+ *   Dinic dinic(n);                 // n = 节点数，节点编号 0..n-1
+ *   dinic.add_edge(u, v, cap);      // 添加有向边 u->v，容量 cap
+ *   ll flow = dinic.max_flow(s, t); // 求 s -> t 的最大流
+ *   auto inS = dinic.min_cut(s);    // (可选) 最小割的 S 集合，inS[i]=true 表示 i 在 S 侧
+ *
+ * 时间复杂度: O(V^2 * E)，单位容量图 O(E * sqrt(V))
  * 存储: rev 字段指向反向边下标
  */
 #include <bits/stdc++.h>
@@ -8110,12 +8260,6 @@ struct Dinic {
     void add_edge(int u, int v, ll cap) {
         g[u].push_back({v, (int)g[v].size(), cap});
         g[v].push_back({u, (int)g[u].size() - 1, 0});   // 反向边容量为 0
-    }
-
-    // 添加无向边 u-v，容量为 cap
-    void add_undirected(int u, int v, ll cap) {
-        g[u].push_back({v, (int)g[v].size(), cap});
-        g[v].push_back({u, (int)g[u].size() - 1, cap});  // 反向边容量也为 cap
     }
 
     // BFS 构建分层图，返回汇点 t 是否可达
@@ -8190,6 +8334,11 @@ struct Dinic {
 /**
  * Dinic 最大流 — tot^1 成对存储版本
  * 正向边编号偶数 (i), 反向边编号奇数 (i^1)
+ *
+ * 如何使用：
+ *   Dinic_TotTrick dinic(n);        // 构造，节点编号 0..n-1
+ *   dinic.add_edge(u, v, cap);      // 加一条有向边 u->v，容量 cap
+ *   ll flow = dinic.max_flow(s, t); // 返回 s 到 t 的最大流
  */
 struct Dinic_TotTrick {
     struct Edge {
@@ -8200,7 +8349,7 @@ struct Dinic_TotTrick {
     vector<Edge> edges;
     vector<int> head;     // head[u]: 节点 u 的第一条出边编号
     vector<int> level, ptr;
-    int tot;              // 边的总数（每条无向边贡献 2）
+    int tot;              // 边的总数（每条有向边贡献 2：正向边 + 残量反向边）
 
     Dinic_TotTrick(int n_) : n(n_), head(n_, -1), level(n_), ptr(n_), tot(0) {
         edges.reserve(200000);  // 预分配，减少扩容
@@ -8277,6 +8426,13 @@ KACTL 的 Dinic 额外引入 **容量缩放 (capacity scaling)**：从大到小�
  *   lim = 1 << 30 适用于 int 容量（约 10^9）
  *   lim = 1ll << 60 适用于 long long 容量
  *   或取 max_cap 的最高位: lim = 1ll << (63 - __builtin_clzll(max_cap))
+ *
+ * 如何使用：
+ *   DinicScaling dinic(n);                    // 构造，节点编号 0..n-1
+ *   dinic.add_edge(u, v, cap);                // 加一条有向边 u->v，容量 cap
+ *   ll flow = dinic.max_flow(s, t);           // 返回 s 到 t 的最大流
+ *   ll flow = dinic.max_flow(s, t, max_cap);  // max_cap = 最大单边容量（0 表示默认 1<<30）
+ *   auto cut = dinic.min_cut(s);              // 返回从 s 可达的 S 侧顶点集合（可选）
  */
 struct DinicScaling {
     struct Edge {
@@ -8399,8 +8555,16 @@ $O(F \cdot E \log V)$，$F$ 为最大流量。若要求特定流量 $K \le F$，
 ```cpp
 /**
  * MCMF — 最小费用最大流 (Johnson 势能 + Dijkstra)
- * 支持负权边：通过 Bellman-Ford 初始化势能
  * 时间复杂度: O(F * E * log V)
+ *
+ * 如何使用:
+ * 1. 构造: MCMF(int n) —— 节点编号 0..n-1。
+ * 2. 加边: add_edge(u, v, cap, cost) —— 添加有向边 u->v，容量 cap，单位费用 cost。
+ * 3. 求解: 仅当图中有负费用边时，先调用 init_potentials(s)；否则跳过（势能保持 0）。
+ *    再调用 auto [flow, cost] = solve(s, t) 求最大流最小费用，
+ *    或 solve(s, t, K) 表示推满流量 K 即停止。
+ * 4. 返回值: solve 返回 pair<ll,ll> {实际流量, 最小总费用}；
+ *    init_potentials 检测到负环时返回 false（MCMF 无解）。
  */
 #include <bits/stdc++.h>
 using namespace std;
@@ -8840,6 +9004,12 @@ struct HopcroftKarp {
 /**
  * 最大权闭合子图
  * max_profit = sum(正权) - min_cut(s,t)
+ *
+ * 使用方式:
+ *   ①构造: MaxWeightClosure m(n, w);  // n 个点 0..n-1, w[i] 为点权(可为负)
+ *   ②加边: m.add_implication(u, v);   // 有向边 u->v, 含义"选 u 则必须选 v"
+ *   ③求解: auto [ans, chosen] = m.solve();
+ *   ④返回: ans = 最大权和; chosen = 选中的点集
  */
 struct MaxWeightClosure {
     int n;
@@ -8901,6 +9071,12 @@ struct MaxWeightClosure {
  * 最小路径覆盖 (Minimum Path Cover for DAG)
  * min_paths = n - max_matching
  * 返回路径数 + 每条路径的节点序列
+ *
+ * 使用方式:
+ *   ①构造: MinPathCover mpc(n);   // DAG 顶点 0..n-1
+ *   ②加边: mpc.add_edge(u, v);    // 有向边 u->v
+ *   ③求解: auto [cnt, paths] = mpc.solve();
+ *   ④返回: cnt = 最少路径数; paths = 每条路径的节点序列
  */
 struct MinPathCover {
     int n;
@@ -8962,6 +9138,12 @@ struct MinPathCover {
 
 // ====== 可相交最小路径覆盖 ======
 // 先用 Floyd 求传递闭包，再做不相交覆盖
+//
+// 使用方式:
+//   ①构造: MinPathCoverIntersecting mpc(n);  // DAG 顶点 0..n-1
+//   ②加边: mpc.add_edge(u, v);               // 有向边 u->v
+//   ③求解: auto [cnt, paths] = mpc.solve();  // 内部先 Floyd 求传递闭包再覆盖
+//   ④返回: cnt = 最少路径数; paths = 每条路径的节点序列
 struct MinPathCoverIntersecting {
     int n;
     vector<vector<bool>> reach;  // 传递闭包
@@ -9146,6 +9328,18 @@ struct BoundedFlow {
  * 上下界网络流 — 完整比赛模板
  * 功能：无源汇可行流 / 有源汇可行流 / 有源汇最大流
  * 每条边的实际流量 = lower + dinic 中对应边的流量
+ *
+ * 如何使用：
+ *   ① 构造：BoundedDinic dinic(n);                 // n 为原图节点数 (0..n-1)
+ *   ② 加边：int id = dinic.add_edge(u, v, lower, upper);
+ *           // 有向边 u->v，流量满足 lower <= f <= upper，返回边编号 id
+ *   ③ 求解：
+ *        无源汇可行流：dinic.feasible()
+ *        有源汇可行流：dinic.feasible(s, t)
+ *        有源汇最大流：ll f = dinic.max_flow_bounded(s, t);
+ *   ④ 返回值：
+ *         feasible() 返回 true/false 表示是否存在可行流
+ *         max_flow_bounded 返回最大流值，返回 -1 表示不可行
  */
 struct BoundedDinic {
     struct Edge {
@@ -9287,6 +9481,19 @@ struct BoundedDinic {
 };
 
 // ====== 更简洁的最大流版本（存储原始上界） ======
+/**
+ * 上下界网络流 — 更简洁的最大流版本
+ * 如何使用：
+ *   ① 构造：BoundedFlowSimple bf(n);             // n 为原图节点数
+ *   ② 加边：int id = bf.add_edge(u, v, lo, hi);   // 有向边 u->v，lo <= f <= hi，返回边编号 id
+ *   ③ 求解：
+ *        无源汇可行流：bf.feasible()
+ *        有源汇可行流：bf.feasible(s, t)
+ *        有源汇最大流：ll f = bf.max_flow_bounded(s, t);
+ *   ④ 返回值：
+ *         feasible() 返回 true/false 表示是否存在可行流
+ *         max_flow_bounded 返回最大流值，返回 -1 表示不可行
+ */
 struct BoundedFlowSimple {
     struct Edge {
         int to, rev; ll cap;
@@ -9397,7 +9604,7 @@ $n \times m$ 网格图上求最大独立集 / 最小覆盖：
 
 | 坑点               | 说明                                                                      |
 | ------------------ | ------------------------------------------------------------------------- |
-| **反向边容量**     | 有向边：正向 `cap`，反向 `0`。无向边：正反向均为 `cap`                    |
+| **反向边容量**     | 有向边：正向 `cap`，反向（残量）`0`。原图是无向/双向的边，用两条有向边 `add_edge(u,v,cap)` + `add_edge(v,u,cap)` 表示（各带自己的残量反向边） |
 | **INF 取值**       | 用 `LLONG_MAX / 4` 或 `1e18`，保证加法不溢出；`0x3f3f3f3f` 在 ll 图不够大 |
 | **当前弧重置**     | 每次 BFS 后必须重置 `ptr`，否则当前弧优化失效或 WA                        |
 | **边数奇数偶数**   | `tot^1` 技巧要求边从 0 开始编号且成对添加                                 |
