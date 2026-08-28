@@ -4003,6 +4003,56 @@ ll ex_bsgs(ll a, ll b, ll m) {
 
 公平组合游戏 (ICG / impartial game)：两名玩家轮流、信息完全、无随机。由 SG 理论统一判定先手必胜/必败。
 
+#### 博弈解题框架 / 博弈锚点 (General Framework & Game Anchor)
+
+> **核心**：博弈 ≠ 单纯模拟 / Minimax。真正要研究的是「**哪个不变量（锚点）概括了局面**：我能否把它控到有利形态，对手能否破坏，我能否再拉回」。Minimax、DP、SG、XOR、奇偶性、黄金分割……都是**不同游戏里实现这条思路的数学工具**。
+
+**① 必胜/必败态的递归定义**（一切结论的前提）
+
+- 终结态（无合法操作）→ 必败。
+- $\mathrm{Win}(S)\iff\exists S'\in\mathrm{Next}(S):\mathrm{Lose}(S')$
+- $\mathrm{Lose}(S)\iff\forall S'\in\mathrm{Next}(S):\mathrm{Win}(S')$
+
+> 必胜/必败只是**结果**；真正解释结果的是**锚点**。
+
+**② 状态变换链**（看清控制权）
+
+$$S\xrightarrow{\text{我操作}}S'\xrightarrow{\text{对手最优}}S''\xrightarrow{\text{我操作}}\cdots$$
+
+每一步问三件事：
+1. **选择权**：谁决定操作对象？（我选堆 / 对手选堆我定数量 / 双方各有一部分）。**选择权本身就是博弈资源**。
+2. 我这一手**改动了什么**——尤其对手下一回合的**选择空间**。
+3. 之后我能否**重新把局面拉回**有利锚点。
+
+**③ 博弈锚点（Game Anchor）**
+
+> 能概括当前局面、且能体现双方控制权变化的状态特征 / 结构。
+
+| 游戏 | 锚点 | 判定（先手必胜 ⇔） |
+| ---- | ---- | ----------------- |
+| Nim | 异或和 | $XOR\ne0$ |
+| Anti-Nim | 全≤1 奇偶 + 异或 | 全为 1：$cnt_1$ 偶；否则 $XOR\ne0$ |
+| 威佐夫 | 必败状态集 | $a=\lfloor(b-a)\varphi\rfloor$ 为必败 |
+| Fragmented Nim | $cnt_1$ 奇偶 | 全为 1：$n$ 奇；否则 $cnt_1$ 偶（下方代码） |
+| Rake It In | 整个棋盘 | 小空间 → DFS+Minimax（$9^6\approx5.3\times10^5$） |
+| 区间博弈 | $dp[l][r]$ | 状态重复 → 记忆化 / DP |
+| 一般组合 | $SG(S)$ | $SG\ne0$ |
+| God of Gamblers | 总钱与初始 | $P=\dfrac{n}{n+m}$（公平游戏鞅停时） |
+
+**④ 通用解题步骤**
+
+1. 定义局面 $S$（状态到底长什么样）
+2. 定义操作（$S$ 能到哪些 $S'$）
+3. 认清**选择权**——谁决定操作对象
+4. 分析我这一步对**对手选择空间**的影响
+5. 找**锚点**：奇偶 / $XOR$ / 差值 / 模 / 特殊状态 / $dp[l][r]$ / $SG$
+6. 研究锚点如何被控到有利形态：$XOR\to0$、$cnt_1\to$ 奇、$S\to P$-position
+7. 想对手的**最优反制**，问「我还能不能拉回」
+8. 再选算法：小空间 → DFS+Minimax；状态重复 → 记忆化；有规律 → DP；有结构 → 数学分类；独立子游戏 → SG
+
+**一句话**
+> **博弈题不是找「我这一手怎么走」，而是找一个可被控制的锚点：状态 → 操作 → 影响对手选择 → 锚点变化 → 对手最优反应 → 重新控制锚点。**
+
 ```cpp
 // ---- 巴什博弈 (Bash Game) ----
 // N 个石子，每轮能取 1~M 个。取到最后者胜。
@@ -4078,6 +4128,88 @@ bool staircase_nim_winner(const vi& a) {  // a[i] = 第 i 级石子数 (1-indexe
     int x = 0;
     rep(i, 1, sz(a) + 1) if (i & 1) x ^= a[i - 1];
     return x != 0;
+}
+
+// ---- Fragmented Nim（碎片尼姆 / 对手点堆·你定数量） ----
+// 规则变体：每回合由【对手】先点出一堆，该回合玩家只能决定从该堆取多少（≥1）。
+//     大小 ≥2 的堆 = 「调节器」（可一步做到 →0 或 →1）；大小为 1 的堆只能 →0（无选择余地）。
+// 锚点：cnt1 = 大小为 1 的堆的个数。
+//   全为 1 堆         ：先手胜 ⇔ 堆数 n 为奇数
+//   存在 ≥2 的堆      ：先手胜 ⇔ cnt1 为偶数
+// 复杂度 O(N)。（闭式结果来自上述「对手点堆、玩家定取量」的规则，与普通 Nim 的 XOR 判定不同）
+bool fragmented_nim_winner(const vi& piles) {
+    int n = sz(piles), cnt1 = 0;
+    for (int p : piles) cnt1 += (p == 1);   // 统计大小为 1 的堆
+    if (cnt1 == n) return n % 2 == 1;        // 全为 1：n 奇 → 先手胜
+    return cnt1 % 2 == 0;                    // 存在 ≥2：cnt1 偶 → 先手胜
+}
+```
+
+#### 公平游戏 / 赌徒破产定理 (Fair Game & Gambler's Ruin)
+
+**English**: Fair Game / Gambler's Ruin | **Chinese**: 公平游戏 / 赌徒破产定理
+
+与上面确定性的公平组合游戏（SG / ICG，**无随机**）不同，这里讨论**含概率的公平游戏**——带停时的随机游走 / 鞅（martingale）问题。赌徒初始持有 $i$ 元，玩「每局 +1 元 / -1 元」的游戏，直到到达 **0 元（破产）** 或 **目标 $N$ 元（获胜）** 立即停止。给出**命中两个吸收边界之一**的概率与期望局数的**闭式解**，可用于替代 O(N) 的概率 DP、带停时的随机游走问题。
+
+- **公平游戏**：单局期望收益 $p(+1)+q(-1)=p-q=2p-1$，**公平 ⇔ $p=q=\frac12$**。此时 ±1 完全抵消，金额过程是**鞅（martingale）**：$E[X_{n+1}\mid X_n]=X_n$，无漂移。
+- **鞅停时定理（Optional Stopping Theorem）**：公平游戏在停时（吸收时刻）的期望值等于初始值：
+$$P_{\text{win}}\cdot N+(1-P_{\text{win}})\cdot 0=i\implies P_{\text{win}}=\frac{i}{N}\quad(\text{仅当 }p=\tfrac12)$$
+  即：**公平游戏的胜率 = 押注比例**。
+
+令 $r=\frac{q}{p}$，非公平（$p\neq q$）的一般公式：
+
+$$
+P_{\text{win}}(i)=\begin{cases}\dfrac{i}{N},&p=q=\tfrac12\\[2mm]\dfrac{1-r^{i}}{1-r^{N}},&p\neq q\end{cases}\qquad
+E[\text{局数}](i)=\begin{cases}i(N-i),&p=q=\tfrac12\\[2mm]\dfrac{i-N\,P_{\text{win}}(i)}{q-p},&p\neq q\end{cases}
+$$
+
+【典型应用】带吸收边界的随机游走 / 掷硬币过程；计算「先到达 $N$ 而非 $0$ 的概率」或「平均需要多少步」；公平游戏下的期望收益（$p=\frac12$ 时最终期望值 = $i$，即鞅无漂移）。
+
+```cpp
+// ---- 公平游戏 (Fair Game) & 赌徒破产定理 (Gambler's Ruin) ----
+// 场景：赌徒初始 i 元，目标 N 元。每局 +1(赢, p) / -1(输, q=1-p)，到达 0(破产) 或 N(胜) 即停。
+// 相关量：P_win = 到达 N 的概率、ruin_lose_prob = 1-P_win、E = 期望局数。
+// 公式（r = q/p）：
+//   P_win = i/N                      (p = 1/2，公平 / 鞅)
+//   P_win = (1 - r^i)/(1 - r^N)      (p != 1/2)
+//   E     = i(N-i)                   (p = 1/2)
+//   E     = (i - N*P_win)/(q - p)    (p != 1/2)
+// 复杂度 O(1)（powl 为约 O(log N) 的浮点幂，常数级）。
+// 注意：p 极接近 1/2 时直接用公平式 i/N（即连续极限），避免 (1-r^i)/(1-r^N) 的消去误差。
+
+// 到达目标 N 而非破产 0 的概率
+long double ruin_win_prob(long long i, long long N, long double p) {
+    long double q = 1.0L - p;
+    if (fabsl(q - p) < 1e-12L) return (long double)i / N;   // 公平：P = i/N
+    long double r = q / p;
+    long double pi, pN;
+    if (r < 1.0L) {                        // p > 1/2，r^i, r^N <= 1，直接算不溢出
+        pi = powl(r, (long double)i);
+        pN = powl(r, (long double)N);
+    } else {                               // p < 1/2，r 可能极大，改用 1/r 防溢出
+        long double s = 1.0L / r;          // s < 1
+        pi = powl(s, (long double)(N - i));  // r^(i-N) = s^(N-i) <= 1
+        pN = powl(s, (long double)N);         // r^(-N)  = s^N    <= 1
+        return (pi - pN) / (1.0L - pN);    // (r^{i-N} - r^{-N}) / (1 - r^{-N})
+    }
+    return (1.0L - pi) / (1.0L - pN);
+}
+
+// 破产概率 = 1 - P_win
+long double ruin_lose_prob(long long i, long long N, long double p) {
+    return 1.0L - ruin_win_prob(i, N, p);
+}
+
+// 期望局数（到达 0 或 N 所需的平均步数）
+long double ruin_expected_steps(long long i, long long N, long double p) {
+    long double q = 1.0L - p, dp = q - p;
+    if (fabsl(dp) < 1e-12L) return (long double)i * (N - i);  // 公平：E = i(N-i)
+    return ((long double)i - N * ruin_win_prob(i, N, p)) / dp;
+}
+
+// 公平游戏（p=1/2）最终期望值 = 初始值 i（鞅性质演示）
+long double fair_expected_final(long long i, long long N) {
+    return ruin_win_prob(i, N, 0.5L) * N;   // = i
 }
 ```
 
